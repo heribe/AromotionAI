@@ -17,7 +17,7 @@ export const ChatPanel: React.FC = () => {
   }, [messages, isSending]);
 
   return (
-    <div className="chat-panel" style={{ height: '100%', borderLeft: '1px solid var(--border-line)', background: 'var(--bg-green)' }}>
+    <div className="chat-panel" style={{ height: '100%', display: 'flex', flexDirection: 'column', borderLeft: '1px solid var(--border-line)', background: 'var(--bg-paper)', overflow: 'hidden' }}>
       {/* 消息列表区 */}
       <div className="chat-messages" style={{ flex: 1, overflowY: 'auto', padding: '24px 24px' }}>
         {messages.map(msg => (

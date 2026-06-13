@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Typography, Collapse, Space } from 'antd';
+import { Typography, Collapse } from 'antd';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import type { FragrancePlan, FragranceNote } from '../../../types/fragrance';
 import { useFragranceStore } from '../../../stores/useFragranceStore';
@@ -30,25 +30,35 @@ export const PlanCard: React.FC<PlanCardProps> = ({ plan, index }) => {
   const renderNotes = (title: string, notes: FragranceNote[]) => {
     if (!notes || notes.length === 0) return null;
     return (
-      <div style={{ marginBottom: 20 }}>
-        <div style={{ borderBottom: '1px solid rgba(47, 54, 48, 0.1)', marginBottom: 12, paddingBottom: 4 }}>
-          <Text style={{ fontFamily: 'var(--font-serif)', color: 'var(--text-secondary)', fontSize: 13, letterSpacing: 1 }}>{title}</Text>
+      <div style={{ marginBottom: 32 }}>
+        <div style={{ 
+          marginBottom: 16, 
+          paddingBottom: 6,
+          borderBottom: '1px solid rgba(47, 54, 48, 0.08)'
+        }}>
+          <Text style={{ 
+            fontFamily: 'var(--font-serif)', 
+            color: 'var(--text-secondary)', 
+            fontSize: 12, 
+            letterSpacing: 3,
+            textTransform: 'uppercase'
+          }}>{title}</Text>
         </div>
-        <Space direction="vertical" size={12} style={{ width: '100%' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           {notes.map((note, i) => (
             <div key={`${note.name}-${i}`} className={`note-item ${note.changed && isHighlighted ? 'changed' : ''}`}>
-              <div>
-                <Text strong style={{ fontSize: 14, color: 'var(--text-primary)' }}>{note.name}</Text>
-                <Text style={{ fontSize: 13, color: 'var(--text-secondary)', marginLeft: 8 }}>{note.description}</Text>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
+                <Text strong style={{ fontSize: 15, color: 'var(--text-primary)', fontFamily: 'var(--font-serif)' }}>{note.name}</Text>
+                <Text style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{note.description}</Text>
                 {note.changed && isHighlighted && <span className="changed-badge">[NEW]</span>}
               </div>
-              <div style={{ display: 'flex', marginTop: 4 }}>
-                <span style={{ color: 'var(--accent-amber)', marginRight: 6 }}>↳</span>
-                <Text style={{ fontSize: 12, color: 'var(--text-secondary)' }}>推荐理由: {note.reason}</Text>
+              <div style={{ display: 'flex', alignItems: 'baseline', marginTop: 6, paddingLeft: 2 }}>
+                <span style={{ color: 'var(--accent-amber)', marginRight: 8, fontSize: 12 }}>↳</span>
+                <Text style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.6 }}>推荐理由: {note.reason}</Text>
               </div>
             </div>
           ))}
-        </Space>
+        </div>
       </div>
     );
   };
@@ -57,19 +67,51 @@ export const PlanCard: React.FC<PlanCardProps> = ({ plan, index }) => {
     <div 
       id={`plan-${plan.planId}`} 
       className={`plan-card ${isHighlighted ? 'highlighted' : ''}`} 
-      style={{ marginBottom: 24, animationDelay: `${index * 0.15}s` }}
+      style={{ 
+        marginBottom: 40, 
+        animationDelay: `${index * 0.15}s`,
+        padding: '36px 40px 28px'
+      }}
     >
       {/* 标题区 */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 24 }}>
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'flex-start', 
+        marginBottom: 36,
+        paddingBottom: 20,
+        borderBottom: '1px solid rgba(47, 54, 48, 0.08)'
+      }}>
         <div>
-          <Title level={3} style={{ fontFamily: 'var(--font-serif)', color: 'var(--accent-moss)', margin: 0, fontWeight: 500 }}>
+          <Title level={3} style={{ 
+            fontFamily: 'var(--font-serif)', 
+            color: 'var(--accent-moss)', 
+            margin: 0, 
+            fontWeight: 500,
+            fontSize: 26,
+            letterSpacing: 1
+          }}>
             {plan.name}
           </Title>
-          <Text style={{ fontSize: 14, color: 'var(--text-secondary)', marginTop: 4, display: 'block' }}>
+          <Text style={{ 
+            fontSize: 13, 
+            color: 'var(--text-secondary)', 
+            marginTop: 6, 
+            display: 'block',
+            fontFamily: 'var(--font-serif)',
+            fontStyle: 'italic'
+          }}>
             {plan.category}
           </Text>
         </div>
-        <Text style={{ color: 'var(--accent-amber)', fontFamily: 'var(--font-serif)', fontSize: 16 }}>
+        <Text style={{ 
+          color: 'var(--accent-amber)', 
+          fontFamily: 'var(--font-serif)', 
+          fontSize: 13, 
+          letterSpacing: 2,
+          fontStyle: 'italic',
+          opacity: 0.7
+        }}>
           Plan {index + 1}
         </Text>
       </div>
@@ -84,20 +126,20 @@ export const PlanCard: React.FC<PlanCardProps> = ({ plan, index }) => {
         ghost
         activeKey={activeKeys}
         onChange={(keys) => setActiveKeys(keys as string[])}
-        expandIcon={({ isActive }) => isActive ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-        style={{ marginTop: 12, marginLeft: -16, marginRight: -16 }} // 抵消卡片的 padding，使 Collapse 分割线到边缘
+        expandIcon={({ isActive }) => isActive ? <ChevronUp size={14} color="var(--text-secondary)" /> : <ChevronDown size={14} color="var(--text-secondary)" />}
+        style={{ marginTop: 8, marginLeft: -16, marginRight: -16 }}
       >
         <Panel 
-          header={<Text style={{ fontFamily: 'var(--font-serif)', color: 'var(--text-primary)', fontWeight: 500 }}>推荐原因</Text>} 
+          header={<Text style={{ fontFamily: 'var(--font-serif)', color: 'var(--text-primary)', fontWeight: 500, fontSize: 14 }}>推荐原因</Text>} 
           key="reason"
         >
-          <Paragraph style={{ color: 'var(--text-secondary)', lineHeight: 1.8, marginBottom: 0 }}>
+          <Paragraph style={{ color: 'var(--text-secondary)', lineHeight: 1.9, marginBottom: 0, fontSize: 13 }}>
             {plan.recommendationReason}
           </Paragraph>
         </Panel>
         
         <Panel 
-          header={<Text style={{ fontFamily: 'var(--font-serif)', color: 'var(--text-primary)', fontWeight: 500 }}>创作灵感</Text>} 
+          header={<Text style={{ fontFamily: 'var(--font-serif)', color: 'var(--text-primary)', fontWeight: 500, fontSize: 14 }}>创作灵感</Text>} 
           key="story"
         >
           <div className="story-content">

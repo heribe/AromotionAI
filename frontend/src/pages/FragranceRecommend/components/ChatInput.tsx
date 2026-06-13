@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Input, Button, Space } from 'antd';
+import { Input, Button } from 'antd';
 import { Send } from 'lucide-react';
 import { useFragranceStore } from '../../../stores/useFragranceStore';
 import '../index.css';
@@ -29,27 +29,55 @@ export const ChatInput: React.FC = () => {
   };
 
   return (
-    <div className="chat-input-area" style={{ background: 'var(--bg-paper)' }}>
-      <div style={{ marginBottom: 12, display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
+    <div className="chat-input-area" style={{ 
+      background: 'var(--bg-paper)', 
+      padding: '16px 20px 20px',
+      borderTop: '1px solid var(--border-line)',
+      flexShrink: 0
+    }}>
+      {/* 快捷操作 */}
+      <div style={{ 
+        marginBottom: 14, 
+        display: 'flex', 
+        gap: 8, 
+        flexWrap: 'wrap'
+      }}>
         {QUICK_ACTIONS.map(action => (
-          <Button 
+          <button 
             key={action.label} 
-            size="small" 
             onClick={() => handleQuickAction(action.message)}
             disabled={isSending}
             style={{ 
-              borderRadius: 2, 
+              border: '1px solid var(--border-line)',
+              borderRadius: 20,
+              background: 'transparent',
               color: 'var(--text-secondary)', 
-              borderColor: 'var(--border-line)',
               fontSize: 12,
-              flexShrink: 0
+              padding: '5px 14px',
+              cursor: isSending ? 'not-allowed' : 'pointer',
+              opacity: isSending ? 0.5 : 1,
+              fontFamily: 'var(--font-sans)',
+              transition: 'all 0.2s ease',
+              lineHeight: 1.4
+            }}
+            onMouseEnter={(e) => {
+              if (!isSending) {
+                e.currentTarget.style.borderColor = 'var(--accent-amber)';
+                e.currentTarget.style.color = 'var(--accent-amber)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = 'var(--border-line)';
+              e.currentTarget.style.color = 'var(--text-secondary)';
             }}
           >
             {action.label}
-          </Button>
+          </button>
         ))}
       </div>
-      <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end' }}>
+
+      {/* 输入区 */}
+      <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end' }}>
         <TextArea
           value={value}
           onChange={e => setValue(e.target.value)}
@@ -63,22 +91,32 @@ export const ChatInput: React.FC = () => {
             }
           }}
           style={{ 
-            borderRadius: 2,
+            borderRadius: 20,
             fontFamily: 'var(--font-sans)',
             boxShadow: 'none',
             borderColor: 'var(--border-line)',
+            padding: '8px 16px',
+            fontSize: 13,
+            resize: 'none'
           }}
         />
         <Button 
           type="primary" 
-          icon={<Send size={16} />} 
+          icon={<Send size={14} />} 
           onClick={handleSend}
           loading={isSending}
           style={{ 
-            borderRadius: 2, 
+            borderRadius: '50%', 
             background: 'var(--accent-amber)',
-            height: 32,
-            paddingInline: 16
+            width: 36,
+            height: 36,
+            minWidth: 36,
+            padding: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+            border: 'none'
           }}
         />
       </div>

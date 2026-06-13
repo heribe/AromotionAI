@@ -50,7 +50,7 @@ export const FragranceRecommend: React.FC = () => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 64px - 48px)' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
       {/* 顶部导航 */}
       <div style={{ 
         display: 'flex', 
@@ -106,7 +106,7 @@ export const FragranceRecommend: React.FC = () => {
         <ReferenceDock isSkeleton={animState !== 'completed'} />
 
         {/* 中间方案区 / 加载区 */}
-        <div className="plan-panel" style={{ flex: 1, overflowY: 'auto', padding: '32px 48px', position: 'relative' }}>
+        <div className="plan-panel" style={{ flex: 1, overflowY: 'auto', padding: '40px 48px', position: 'relative', background: 'var(--bg-green)' }}>
           {animState !== 'completed' ? (
             <ExtractionAnimation isFadingOut={animState === 'fading_out'} />
           ) : (
