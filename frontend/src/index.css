@@ -1,21 +1,37 @@
+@import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Outfit:wght@300;400;500;600&family=Noto+Serif+SC:wght@400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;600&display=swap');
+
 :root {
-  --bg-ceramic: #F4F4F5;
-  --bg-card: #F9F9F9;
-  --text-primary: #2F3330;
-  --text-secondary: #757575;
-  --border-line: #E0E0E0;
-  --accent-amber: #8B6A47;
-  --accent-moss: #4A5D4E;
+  /* 更加清透、带有极弱绿意和暖意的石材底色 */
+  --bg-green: #EAECE6; 
+  /* 干净的高级复古打印纸色 */
+  --bg-paper: #FDFDFB; 
   
-  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
-  --font-serif: 'Georgia', 'Times New Roman', serif;
+  --text-primary: #2A332C; /* 更深的墨绿/炭灰，提升对比度 */
+  --text-secondary: #717A73;
+  --text-light: #2A332C; 
+  
+  --border-line: #CDD1CA;
+  --border-dark: #2A332C;
+  --accent-amber: #C18841; /* 更明亮温暖的琥珀金色 */
+  --accent-moss: #2C3E2D;
+  
+  /* 极度微弱的纸张颗粒噪声 */
+  --noise-light: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
+  --noise-dark: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+
+  /* 极致优雅的四角芒星（用于边框装裱） */
+  --corner-star: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M5 0 C5 3, 7 5, 10 5 C7 5, 5 7, 5 10 C5 7, 3 5, 0 5 C3 5, 5 3, 5 0 Z' fill='%23C18841'/%3E%3C/svg%3E");
+
+  --font-sans: 'Outfit', 'Noto Sans SC', system-ui, -apple-system, sans-serif;
+  --font-serif: 'Lora', 'STKaiti', 'KaiTi', 'Noto Serif SC', 'Playfair Display', 'Times New Roman', 'Georgia', serif;
 }
 
 body {
   margin: 0;
   padding: 0;
   font-family: var(--font-sans);
-  background-color: var(--bg-ceramic);
+  background-color: var(--bg-green);
+  background-image: var(--noise-dark);
   color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -25,18 +41,102 @@ body {
   box-sizing: border-box;
 }
 
-/* 覆盖 Antd 默认的卡片边框和阴影，实现 Natural Artisan Ledger 质感 */
+/* 具有高级排版感的复古纸张卡片 */
 .ant-card {
-  box-shadow: none !important;
-  border: 1px solid var(--border-line) !important;
-  background: var(--bg-card) !important;
+  box-shadow: 2px 2px 0px rgba(0,0,0,0.05) !important; /* 非常轻微的下沉立体感 */
+  border: 1px solid var(--border-line) !important; /* 柔和的外边框 */
+  background-color: var(--bg-paper) !important;
+  background-image: var(--noise-light) !important; /* 纸张纹理 */
+  border-radius: 2px !important; 
+  position: relative;
+}
+
+/* 卡片内层细线边框 */
+.ant-card::before {
+  content: '';
+  position: absolute;
+  top: 8px; left: 8px; right: 8px; bottom: 8px;
+  border: 1px solid rgba(47, 54, 48, 0.12);
+  pointer-events: none;
+}
+
+/* 卡片边角的精致芒星 (Sparkle) */
+.ant-card::after {
+  content: '';
+  position: absolute;
+  top: 5px; left: 5px; right: 5px; bottom: 5px;
+  pointer-events: none;
+  background-image: 
+    var(--corner-star),
+    var(--corner-star),
+    var(--corner-star),
+    var(--corner-star);
+  background-position: 
+    top 0 left 0,
+    top 0 right 0,
+    bottom 0 left 0,
+    bottom 0 right 0;
+  background-repeat: no-repeat;
+  background-size: 7px 7px;
+}
+
+/* 覆盖统计数字的字体样式，增加圆润感和古典感 */
+.ant-statistic-content {
+  font-family: var(--font-serif) !important;
+  color: var(--text-primary) !important;
+  font-size: 32px !important;
+}
+.ant-statistic-title {
+  font-family: var(--font-sans) !important;
+  color: var(--text-secondary) !important;
+  letter-spacing: 0.5px;
 }
 
 .ant-layout {
-  background: var(--bg-ceramic) !important;
+  background: transparent !important;
 }
 
 .ant-layout-header {
-  background: var(--bg-card) !important;
-  border-bottom: 1px solid var(--border-line);
+  background: transparent !important;
+  border-bottom: 1px solid rgba(47, 54, 48, 0.1) !important;
+}
+
+/* 导航栏样式覆盖 */
+.ant-menu-horizontal {
+  border-bottom: none !important;
+}
+.ant-menu-horizontal > .ant-menu-item {
+  color: var(--text-secondary) !important;
+}
+.ant-menu-horizontal > .ant-menu-item:hover, .ant-menu-horizontal > .ant-menu-item-selected {
+  color: var(--text-primary) !important;
+}
+.ant-menu-horizontal > .ant-menu-item-selected::after {
+  border-bottom-color: var(--accent-amber) !important;
+}
+
+/* 深度定制表格：让它看起来像账本上的手绘线条 */
+.ant-table, .ant-table-container, .ant-table-content, .ant-table-cell {
+  background: transparent !important;
+}
+.ant-table-thead > tr > th {
+  background: transparent !important;
+  border-bottom: 2px solid var(--border-dark) !important; /* 加重表头线 */
+  color: var(--text-secondary) !important;
+  font-family: var(--font-serif);
+  font-size: 13px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 16px 8px !important;
+}
+.ant-table-tbody > tr > td {
+  border-bottom: 1px solid var(--border-line) !important;
+  color: var(--text-primary);
+  padding: 20px 8px !important;
+}
+.ant-table-tbody > tr:hover > td {
+  background: rgba(44, 62, 45, 0.03) !important; /* 极轻微的苔藓绿 Hover */
+}
+.ant-table-thead th::before {
+  display: none !important; /* 去除 Antd 表头默认的竖向分割线 */
 }

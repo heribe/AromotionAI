@@ -13,32 +13,35 @@ export const Dashboard: React.FC = () => {
 
   return (
     <div>
-      <div style={{ marginBottom: 32 }}>
-        <Title level={2} style={{ fontFamily: 'var(--font-serif)', margin: 0 }}>工作台</Title>
-        <Text type="secondary">欢迎回来，调香师。这里是你的数据洞察中心。</Text>
+      <div style={{ marginBottom: 48, borderBottom: '1px solid rgba(47, 54, 48, 0.1)', paddingBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+        <div>
+          <Title level={1} style={{ fontFamily: 'var(--font-serif)', margin: 0, color: 'var(--accent-moss)', fontSize: 42, fontWeight: 400 }}>工作台</Title>
+          <Text style={{ color: 'var(--text-secondary)', fontStyle: 'italic', fontFamily: 'var(--font-serif)', fontSize: 16 }}>Perfumer's Dashboard & Analysis</Text>
+        </div>
+        <Text style={{ color: 'var(--accent-amber)', letterSpacing: 2, fontSize: 11, textTransform: 'uppercase' }}>Session Active // Artisan</Text>
       </div>
 
-      <Row gutter={[24, 24]}>
+      <Row gutter={[32, 32]}>
         <Col span={8}>
-          <Card>
-            <Statistic title="分析任务总数" value={12} suffix="项" valueStyle={{ color: 'var(--accent-amber)' }} />
+          <Card bodyStyle={{ padding: '32px 24px' }}>
+            <Statistic title={<Text style={{fontFamily: 'var(--font-serif)', color: 'var(--text-secondary)', fontSize: 16}}>分析任务总数</Text>} value={12} suffix="项" valueStyle={{ color: 'var(--text-primary)', fontSize: 48, fontFamily: 'var(--font-serif)', fontWeight: 400 }} />
           </Card>
         </Col>
         <Col span={8}>
-          <Card>
-            <Statistic title="生成香调方案" value={45} suffix="个" valueStyle={{ color: 'var(--accent-moss)' }} />
+          <Card bodyStyle={{ padding: '32px 24px' }}>
+            <Statistic title={<Text style={{fontFamily: 'var(--font-serif)', color: 'var(--text-secondary)', fontSize: 16}}>生成香调方案</Text>} value={45} suffix="个" valueStyle={{ color: 'var(--accent-amber)', fontSize: 48, fontFamily: 'var(--font-serif)', fontWeight: 400 }} />
           </Card>
         </Col>
         <Col span={8}>
-          <Card>
-            <Statistic title="洞察博主画像" value={320} suffix="位" />
+          <Card bodyStyle={{ padding: '32px 24px' }}>
+            <Statistic title={<Text style={{fontFamily: 'var(--font-serif)', color: 'var(--text-secondary)', fontSize: 16}}>洞察博主画像</Text>} value={320} suffix="位" valueStyle={{ color: 'var(--text-primary)', fontSize: 48, fontFamily: 'var(--font-serif)', fontWeight: 400 }} />
           </Card>
         </Col>
       </Row>
 
-      <div style={{ marginTop: 40 }}>
-        <Title level={4} style={{ fontFamily: 'var(--font-serif)' }}>最近分析任务</Title>
-        <Card bodyStyle={{ padding: 0 }}>
+      <div style={{ marginTop: 64 }}>
+        <Title level={4} style={{ fontFamily: 'var(--font-serif)', color: 'var(--accent-moss)', fontStyle: 'italic', marginBottom: 24 }}>Recent Formulation Tasks</Title>
+        <Card bodyStyle={{ padding: '32px 40px' }}>
           <Table 
             dataSource={mockTasks} 
             rowKey="id"

@@ -33,7 +33,7 @@ export const AppLayout: React.FC = () => {
         borderBottom: '1px solid var(--border-line)'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', marginRight: '40px' }}>
-          <FlaskConical color="var(--accent-amber)" size={24} style={{ marginRight: 12 }} />
+          <FlaskConical color="var(--accent-moss)" size={24} style={{ marginRight: 12 }} />
           <Title level={4} style={{ margin: 0, fontFamily: 'var(--font-serif)', color: 'var(--text-primary)' }}>
             AromotionAI
           </Title>
