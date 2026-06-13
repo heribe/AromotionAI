@@ -715,29 +715,30 @@ export const analysisService = {
 
 ### 10.1 设计语言
 
-- **主题**: 优雅、专业、带有香水行业的精致感
-- **主色调**: 深色背景 + 暖金/玫瑰金点缀（暗色模式优先）
-- **字体**: 使用 Google Fonts 的 Inter（英文）+ 系统中文字体
-- **卡片**: 圆角 + 轻微阴影 + 微透明毛玻璃效果
-- **动画**: 页面切换淡入淡出，图表加载动画，进度条平滑过渡
+- **主题**: 自然、匠人、带有高端调香实验室的温润质感 (Natural Artisan Ledger)
+- **主色调**: 浅冷石灰/陶瓷背景 + 深苔藓绿/炭灰文字 + 琥珀色点缀
+- **字体**: 使用 Google Fonts 的 Inter（英文）与优雅的衬线体（标题/强调），中文回退系统黑体/宋体
+- **卡片**: 摒弃传统的厚重卡片与发光阴影，采用极细的实线边框 (1px) 和大面积留白，模拟纸质配方账本
+- **动画**: 极简、克制，避免发光特效和复杂微动效，状态切换自然干脆
 
 ### 10.2 Ant Design 主题定制
 
 ```typescript
 // App.tsx
-import { ConfigProvider, theme } from 'antd';
+import { ConfigProvider } from 'antd';
 
 <ConfigProvider
   theme={{
-    algorithm: theme.darkAlgorithm,
     token: {
-      colorPrimary: '#B76E79',      // 玫瑰金
-      colorSuccess: '#7B8B6F',      // 苔藓绿
-      colorWarning: '#C9A96E',      // 琥珀金
-      colorError: '#F67280',        // 珊瑚红
-      colorBgContainer: '#1a1a2e',  // 深色背景
-      borderRadius: 12,
-      fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+      colorPrimary: '#8B6A47',      // 琥珀色 (Amber)
+      colorSuccess: '#4A5D4E',      // 深苔藓绿 (Moss Green)
+      colorWarning: '#B8860B',      // 暖金
+      colorError: '#A0522D',        // 赤褐
+      colorBgContainer: '#F9F9F9',  // 浅陶瓷灰/试香纸背景
+      borderRadius: 4,              // 极小圆角，偏硬朗纸质感
+      colorText: '#2F3330',         // 炭灰文字
+      colorBorder: '#E0E0E0',       // 极细的浅色分割线
+      fontFamily: "'Inter', 'Georgia', serif, -apple-system, sans-serif",
     },
   }}
 >

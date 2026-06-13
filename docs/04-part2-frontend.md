@@ -603,23 +603,22 @@ export interface NoteChangeAnimation {
 
 ```css
 .plan-card {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 16px;
+  background: transparent;
+  border: 1px solid #E0E0E0;
+  border-radius: 4px;
   padding: 24px;
   margin-bottom: 20px;
-  transition: border-color 0.3s ease;
+  transition: all 0.3s ease;
 }
 
 .plan-card.highlighted {
-  border-color: #B76E79;  /* 玫瑰金高亮 */
-  box-shadow: 0 0 20px rgba(183, 110, 121, 0.2);
-  animation: pulse-border 1s ease-in-out;
+  border-color: #8B6A47;  /* 琥珀色高亮 */
+  background: rgba(139, 106, 71, 0.02);
 }
 
 @keyframes pulse-border {
-  0%, 100% { box-shadow: 0 0 20px rgba(183, 110, 121, 0.2); }
-  50% { box-shadow: 0 0 30px rgba(183, 110, 121, 0.4); }
+  0%, 100% { border-color: #8B6A47; }
+  50% { border-color: rgba(139, 106, 71, 0.3); }
 }
 
 .plan-card .plan-title {
@@ -630,7 +629,7 @@ export interface NoteChangeAnimation {
 
 .plan-card .plan-category {
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.5);
+  color: #757575;
   margin-bottom: 20px;
 }
 ```
@@ -643,19 +642,19 @@ export interface NoteChangeAnimation {
 }
 
 .note-item.changed {
-  background: rgba(183, 110, 121, 0.1);
-  border-left: 3px solid #B76E79;
+  background: rgba(139, 106, 71, 0.05);
+  border-left: 2px solid #8B6A47;
   padding-left: 12px;
   animation: note-fade-in 0.5s ease;
 }
 
 .note-item .changed-badge {
   display: inline-block;
-  background: linear-gradient(135deg, #B76E79, #C9A96E);
+  background: #8B6A47;
   color: white;
   font-size: 11px;
   padding: 2px 8px;
-  border-radius: 10px;
+  border-radius: 2px;
   margin-left: 8px;
   animation: badge-pop 0.3s ease;
 }
@@ -678,11 +677,11 @@ export interface NoteChangeAnimation {
 .story-content {
   font-style: italic;
   line-height: 1.8;
-  color: rgba(255, 255, 255, 0.7);
+  color: #4A5D4E; /* 深苔藓绿 */
   padding: 16px 20px;
-  background: rgba(183, 110, 121, 0.05);
-  border-left: 3px solid rgba(183, 110, 121, 0.3);
-  border-radius: 0 8px 8px 0;
+  background: rgba(74, 93, 78, 0.03);
+  border-left: 2px solid #4A5D4E;
+  border-radius: 0 4px 4px 0;
   font-family: 'Georgia', 'Times New Roman', serif;
 }
 ```
@@ -699,16 +698,19 @@ export interface NoteChangeAnimation {
 }
 
 .message-bubble.user {
-  background: linear-gradient(135deg, #B76E79, #9B6B73);
+  background: #8B6A47; /* 琥珀色 */
   color: white;
   margin-left: auto;
-  border-bottom-right-radius: 4px;
+  border-radius: 8px;
+  border-bottom-right-radius: 2px;
 }
 
 .message-bubble.assistant {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-bottom-left-radius: 4px;
+  background: #F9F9F9;
+  border: 1px solid #E0E0E0;
+  border-radius: 8px;
+  border-bottom-left-radius: 2px;
+  color: #2F3330;
 }
 
 .typing-indicator {
