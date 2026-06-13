@@ -1,5 +1,5 @@
-import React from 'react';
-import { Layout, Menu, Typography } from 'antd';
+import React, { Suspense } from 'react';
+import { Layout, Menu, Typography, Spin } from 'antd';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { FlaskConical, LayoutDashboard } from 'lucide-react';
 
@@ -66,7 +66,13 @@ export const AppLayout: React.FC = () => {
           flexDirection: 'column',
           overflow: location.pathname.startsWith('/recommend') ? 'hidden' : 'visible'
         }}>
-          <Outlet />
+          <Suspense fallback={
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Spin size="large" />
+            </div>
+          }>
+            <Outlet />
+          </Suspense>
         </div>
       </Content>
     </Layout>

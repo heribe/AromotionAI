@@ -36,12 +36,11 @@ export const PlanCard: React.FC<PlanCardProps> = ({ plan, index }) => {
           paddingBottom: 6,
           borderBottom: '1px solid rgba(47, 54, 48, 0.08)'
         }}>
-          <Text style={{ 
-            fontFamily: 'var(--font-serif)', 
-            color: 'var(--text-secondary)', 
-            fontSize: 12, 
-            letterSpacing: 3,
-            textTransform: 'uppercase'
+          <Text style={{
+            fontFamily: 'var(--font-serif)',
+            color: 'var(--text-secondary)',
+            fontSize: 12,
+            letterSpacing: 3
           }}>{title}</Text>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>

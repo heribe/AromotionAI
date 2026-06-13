@@ -41,7 +41,7 @@ export const FragranceRecommend: React.FC = () => {
       content: '重新生成将清空当前的对话历史，并基于原始标签生成全新的方案。',
       okText: '重新生成',
       cancelText: '取消',
-      okButtonProps: { style: { background: 'var(--accent-amber)', borderRadius: 2 } },
+      okButtonProps: { className: 'btn-amber-primary' },
       onOk: () => {
         // Mock 刷新
         initSession(sessionId);

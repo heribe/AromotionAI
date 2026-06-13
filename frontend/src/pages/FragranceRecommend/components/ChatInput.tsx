@@ -100,13 +100,14 @@ export const ChatInput: React.FC = () => {
             resize: 'none'
           }}
         />
-        <Button 
-          type="primary" 
-          icon={<Send size={14} />} 
+        <Button
+          type="primary"
+          icon={<Send size={14} />}
           onClick={handleSend}
           loading={isSending}
-          style={{ 
-            borderRadius: '50%', 
+          className="chat-send-btn"
+          style={{
+            borderRadius: '50%',
             background: 'var(--accent-amber)',
             width: 36,
             height: 36,

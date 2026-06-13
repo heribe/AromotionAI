@@ -105,10 +105,10 @@ export const ReferenceDock: React.FC<Props> = ({ isSkeleton = false }) => {
                 <Text strong style={{ color: 'var(--accent-amber)', fontSize: 13, marginBottom: 8, display: 'block' }}>
                   深层核心需求 <Text style={{ color: 'var(--text-secondary)', fontWeight: 'normal', fontSize: 12 }}>(Deep)</Text>
                 </Text>
-                <div style={{ 
-                  padding: '12px 16px', 
-                  background: 'rgba(193, 136, 65, 0.05)', 
-                  borderLeft: '2px solid var(--accent-amber)' 
+                <div style={{
+                  padding: '12px 16px',
+                  background: 'rgba(193, 136, 65, 0.05)',
+                  border: '1px solid rgba(193, 136, 65, 0.25)'
                 }}>
                   <Paragraph style={{ color: 'var(--text-primary)', fontSize: 13, lineHeight: 1.6, margin: 0 }}>
                     {icebergAnalysis.deep}

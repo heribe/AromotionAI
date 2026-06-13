@@ -110,22 +110,24 @@ export const Dashboard: React.FC = () => {
         <Space size={16}>
           {record.status === 'completed' && (
             <>
-              <a
-                style={{ color: 'var(--accent-amber)' }}
+              <Button
+                type="link"
+                style={{ color: 'var(--accent-amber)', padding: 0, height: 'auto' }}
                 onClick={() => navigate(`/report/${record.taskId}`)}
               >
                 查看画像
-              </a>
-              <a
-                style={{ color: 'var(--accent-moss)' }}
+              </Button>
+              <Button
+                type="link"
+                style={{ color: 'var(--accent-moss)', padding: 0, height: 'auto' }}
                 onClick={() => navigate(`/recommend/${record.taskId}`)}
               >
                 进入调配室
-              </a>
+              </Button>
             </>
           )}
           {['analyzing', 'collecting', 'processing'].includes(record.status) && (
-            <a style={{ color: 'var(--accent-amber)' }}>查看进度</a>
+            <Button type="link" style={{ color: 'var(--accent-amber)', padding: 0, height: 'auto' }}>查看进度</Button>
           )}
           {record.status === 'failed' && (
             <Text style={{ color: '#A0522D', fontSize: 13 }}>{record.errorMessage || '分析失败'}</Text>
@@ -143,7 +145,6 @@ export const Dashboard: React.FC = () => {
           <Title level={1} style={{ fontFamily: 'var(--font-serif)', margin: 0, color: 'var(--accent-moss)', fontSize: 42, fontWeight: 400 }}>工作台</Title>
           <Text style={{ color: 'var(--text-secondary)', fontStyle: 'italic', fontFamily: 'var(--font-serif)', fontSize: 16 }}>Perfumer's Dashboard & Analysis</Text>
         </div>
-        <Text style={{ color: 'var(--accent-amber)', letterSpacing: 2, fontSize: 11, textTransform: 'uppercase' }}>Session Active // Artisan</Text>
       </div>
 
       {/* 新建分析区域 */}
@@ -169,9 +170,10 @@ export const Dashboard: React.FC = () => {
           </div>
           <Button
             type="primary"
+            className="btn-amber-primary"
             icon={<Plus size={14} />}
             onClick={() => setCreateModalOpen(true)}
-            style={{ borderRadius: 2, background: 'var(--accent-amber)', height: 40, paddingInline: 24 }}
+            style={{ height: 40, paddingInline: 24 }}
           >
             开始分析
           </Button>
@@ -189,17 +191,17 @@ export const Dashboard: React.FC = () => {
 
       {/* 统计卡片 */}
       <Row gutter={[32, 32]} style={{ marginBottom: 48 }}>
-        <Col span={8}>
+        <Col xs={24} sm={12} lg={8}>
           <Card bodyStyle={{ padding: '32px 24px' }}>
             <Statistic title={<Text style={{fontFamily: 'var(--font-serif)', color: 'var(--text-secondary)', fontSize: 16}}>分析任务总数</Text>} value={stats.totalTasks} suffix="项" valueStyle={{ color: 'var(--text-primary)', fontSize: 36, fontFamily: 'var(--font-serif)', fontWeight: 400 }} />
           </Card>
         </Col>
-        <Col span={8}>
+        <Col xs={24} sm={12} lg={8}>
           <Card bodyStyle={{ padding: '32px 24px' }}>
             <Statistic title={<Text style={{fontFamily: 'var(--font-serif)', color: 'var(--text-secondary)', fontSize: 16}}>已完成</Text>} value={stats.completedCount} suffix="项" valueStyle={{ color: 'var(--accent-amber)', fontSize: 36, fontFamily: 'var(--font-serif)', fontWeight: 400 }} />
           </Card>
         </Col>
-        <Col span={8}>
+        <Col xs={24} sm={12} lg={8}>
           <Card bodyStyle={{ padding: '32px 24px' }}>
             <Statistic title={<Text style={{fontFamily: 'var(--font-serif)', color: 'var(--text-secondary)', fontSize: 16}}>进行中</Text>} value={stats.runningCount} suffix="项" valueStyle={{ color: 'var(--text-primary)', fontSize: 36, fontFamily: 'var(--font-serif)', fontWeight: 400 }} />
           </Card>
@@ -214,7 +216,7 @@ export const Dashboard: React.FC = () => {
           </Title>
           <Row gutter={[24, 24]} align="stretch">
             {runningTasks.map(task => (
-              <Col span={12} key={task.taskId}>
+              <Col xs={24} md={12} key={task.taskId}>
                 <Card 
                   style={{ height: '100%' }} 
                   bodyStyle={{ padding: '24px 32px', height: '100%', display: 'flex', flexDirection: 'column' }}
@@ -239,10 +241,11 @@ export const Dashboard: React.FC = () => {
                       </Button>
                     )}
                     {task.status === 'processing' && (
-                      <Button 
-                        type="primary" 
-                        size="small" 
-                        style={{ background: 'var(--accent-amber)', borderRadius: 2, fontSize: 12 }}
+                      <Button
+                        type="primary"
+                        className="btn-amber-primary"
+                        size="small"
+                        style={{ fontSize: 12 }}
                         onClick={() => navigate(`/recommend/${task.taskId}`)}
                       >
                         进入调配室
@@ -291,7 +294,7 @@ export const Dashboard: React.FC = () => {
         onCancel={() => setCreateModalOpen(false)}
         okText="开始分析"
         cancelText="取消"
-        okButtonProps={{ style: { background: 'var(--accent-amber)', borderRadius: 2 } }}
+        okButtonProps={{ className: 'btn-amber-primary' }}
       >
         <Paragraph style={{ color: 'var(--text-secondary)' }}>
           将对以下博主进行 <Text strong style={{ color: 'var(--accent-amber)' }}>{analysisLevel}</Text> 级别的受众画像分析：

@@ -2,6 +2,17 @@
   /* No special top-level classes needed if we use inline layout, but we can keep it for flexibility */
 }
 
+/* 发送按钮：视觉保持 36px，用伪元素把点击热区扩到 44×44，触屏/小目标更易点中 */
+.chat-send-btn {
+  position: relative;
+}
+.chat-send-btn::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+}
+
 /* 自定义滚动条 - 中间方案区 */
 .plan-panel::-webkit-scrollbar {
   width: 5px;
@@ -72,8 +83,8 @@
 
 .note-item.changed {
   background: rgba(193, 136, 65, 0.06);
-  border-left: 2px solid var(--accent-amber);
-  padding-left: 12px;
+  padding: 8px 12px;
+  border-radius: 2px;
   animation: note-fade-in 0.6s ease;
 }
 
@@ -106,8 +117,8 @@
   color: var(--accent-moss);
   padding: 16px 20px;
   background: rgba(44, 62, 45, 0.03);
-  border-left: 2px solid var(--accent-moss);
-  border-radius: 0 2px 2px 0;
+  border: 1px solid rgba(44, 62, 45, 0.14);
+  border-radius: 2px;
   font-family: var(--font-serif);
 }
 
