@@ -1,26 +1,25 @@
-import { ConfigProvider, theme } from 'antd';
-import { TestComponent } from '@/components/TestComponent';
+import { ConfigProvider } from 'antd';
+import { RouterProvider } from 'react-router-dom';
+import { router } from './router';
 
 function App() {
   return (
     <ConfigProvider
       theme={{
-        algorithm: theme.darkAlgorithm,
         token: {
-          colorPrimary: '#B76E79',
-          colorSuccess: '#7B8B6F',
-          colorWarning: '#C9A96E',
-          colorError: '#F67280',
-          colorBgContainer: '#1a1a2e',
-          borderRadius: 12,
-          fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+          colorPrimary: '#8B6A47',      // 琥珀色 (Amber)
+          colorSuccess: '#4A5D4E',      // 深苔藓绿 (Moss Green)
+          colorWarning: '#B8860B',      // 暖金
+          colorError: '#A0522D',        // 赤褐
+          colorBgContainer: '#F9F9F9',  // 浅陶瓷灰/试香纸背景
+          borderRadius: 4,              // 极小圆角，偏硬朗纸质感
+          colorText: '#2F3330',         // 炭灰文字
+          colorBorder: '#E0E0E0',       // 极细的浅色分割线
+          fontFamily: "'Inter', 'Georgia', serif, -apple-system, sans-serif",
         },
       }}
     >
-      <div style={{ padding: '50px', textAlign: 'center' }}>
-        <h1>AromotionAI Frontend initialized!</h1>
-        <TestComponent />
-      </div>
+      <RouterProvider router={router} />
     </ConfigProvider>
   )
 }
