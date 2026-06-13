@@ -32,9 +32,9 @@ const MOCK_TASKS: AnalysisTask[] = [
     bloggerName: '木质香调实验室',
     platform: '抖音',
     analysisLevel: '深度',
-    status: 'analyzing',
-    progress: 62,
-    currentStep: '正在分析视频帧...',
+    status: 'waiting_tags',
+    progress: 50,
+    currentStep: '待筛选标签',
     createdAt: '2026-06-13 09:30',
   },
   {

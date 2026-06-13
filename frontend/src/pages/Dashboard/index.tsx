@@ -10,8 +10,10 @@ const { Title, Text, Paragraph } = Typography;
 /** 状态标签颜色映射 */
 const statusConfig: Record<string, { color: string; label: string }> = {
   completed: { color: 'var(--accent-moss)', label: '已完成' },
+  processing: { color: 'var(--accent-amber)', label: '生成配方中' },
   analyzing: { color: 'var(--accent-amber)', label: '分析中' },
   collecting: { color: 'var(--accent-amber)', label: '采集中' },
+  waiting_tags: { color: 'var(--accent-amber)', label: '待筛选标签' },
   pending: { color: 'var(--text-secondary)', label: '排队中' },
   failed: { color: '#A0522D', label: '失败' },
 };
@@ -28,7 +30,7 @@ export const Dashboard: React.FC = () => {
   }, [fetchTaskList]);
 
   // 按状态分类
-  const runningTasks = taskList.filter(t => ['pending', 'collecting', 'analyzing'].includes(t.status));
+  const runningTasks = taskList.filter(t => ['pending', 'collecting', 'analyzing', 'waiting_tags', 'processing'].includes(t.status));
   const completedTasks = taskList.filter(t => t.status === 'completed');
   const failedTasks = taskList.filter(t => t.status === 'failed');
 
@@ -91,17 +93,17 @@ export const Dashboard: React.FC = () => {
                 style={{ color: 'var(--accent-amber)' }}
                 onClick={() => navigate(`/report/${record.taskId}`)}
               >
-                查看报告
+                查看画像
               </a>
               <a
                 style={{ color: 'var(--accent-moss)' }}
-                onClick={() => navigate(`/tags/${record.taskId}`)}
+                onClick={() => navigate(`/recommend/${record.taskId}`)}
               >
-                去推荐
+                进入调配室
               </a>
             </>
           )}
-          {['analyzing', 'collecting'].includes(record.status) && (
+          {['analyzing', 'collecting', 'processing'].includes(record.status) && (
             <a style={{ color: 'var(--accent-amber)' }}>查看进度</a>
           )}
           {record.status === 'failed' && (
@@ -189,10 +191,13 @@ export const Dashboard: React.FC = () => {
           <Title level={4} style={{ fontFamily: 'var(--font-serif)', color: 'var(--accent-moss)', fontWeight: 400, marginBottom: 24 }}>
             进行中的任务 <Text style={{ fontStyle: 'italic', fontFamily: 'var(--font-serif)', fontSize: 14, color: 'var(--text-secondary)', fontWeight: 400 }}>Running Tasks</Text>
           </Title>
-          <Row gutter={[24, 24]}>
+          <Row gutter={[24, 24]} align="stretch">
             {runningTasks.map(task => (
               <Col span={12} key={task.taskId}>
-                <Card bodyStyle={{ padding: '24px 32px' }}>
+                <Card 
+                  style={{ height: '100%' }} 
+                  bodyStyle={{ padding: '24px 32px', height: '100%', display: 'flex', flexDirection: 'column' }}
+                >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                     <div>
                       <Text strong>{task.bloggerName}</Text>
@@ -200,8 +205,40 @@ export const Dashboard: React.FC = () => {
                     </div>
                     <Tag color="var(--accent-amber)" style={{ borderRadius: 2 }}>{statusConfig[task.status]?.label}</Tag>
                   </div>
-                  <Progress percent={task.progress} strokeColor="var(--accent-amber)" trailColor="var(--border-line)" size="small" />
-                  <Text style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 8, display: 'block' }}>{task.currentStep}</Text>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <Progress style={{ flex: 1 }} percent={task.progress} strokeColor="var(--accent-amber)" trailColor="var(--border-line)" size="small" />
+                    {task.status === 'waiting_tags' && (
+                      <Button 
+                        type="primary" 
+                        size="small" 
+                        style={{ background: 'var(--accent-moss)', borderRadius: 2, fontSize: 12 }}
+                        onClick={() => navigate(`/tags/${task.taskId}`)}
+                      >
+                        前往筛选标签
+                      </Button>
+                    )}
+                    {task.status === 'processing' && (
+                      <Button 
+                        type="primary" 
+                        size="small" 
+                        style={{ background: 'var(--accent-amber)', borderRadius: 2, fontSize: 12 }}
+                        onClick={() => navigate(`/recommend/${task.taskId}`)}
+                      >
+                        进入调配室
+                      </Button>
+                    )}
+                    {['pending', 'collecting', 'analyzing'].includes(task.status) && (
+                      <Button 
+                        type="default" 
+                        size="small" 
+                        style={{ borderColor: 'var(--border-line)', color: 'var(--text-secondary)', borderRadius: 2, fontSize: 12 }}
+                        onClick={() => navigate(`/task/${task.taskId}`)}
+                      >
+                        查看进度现场
+                      </Button>
+                    )}
+                  </div>
+                  <Text style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 'auto', paddingTop: 8, display: 'block' }}>{task.currentStep}</Text>
                 </Card>
               </Col>
             ))}

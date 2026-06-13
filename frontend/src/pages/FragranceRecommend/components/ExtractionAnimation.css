@@ -1,0 +1,171 @@
+.extraction-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  width: 100%;
+  position: relative;
+  transition: opacity 0.5s ease;
+}
+
+.extraction-container.fade-out {
+  opacity: 0;
+}
+
+/* 顶部装饰线 */
+.extraction-container .decor-line {
+  position: absolute;
+  top: 40px;
+  width: 1px;
+  height: 80px;
+  background: var(--accent-amber);
+  opacity: 0.5;
+}
+
+/* 动画容器 */
+.extraction-container .animation-container {
+  position: relative;
+  width: 120px;
+  height: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* 滴管针头 */
+.extraction-container .dropper {
+  width: 2px;
+  height: 40px;
+  background-color: var(--accent-moss);
+  position: relative;
+}
+
+.extraction-container .dropper::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: -3px;
+  width: 8px;
+  height: 4px;
+  background-color: var(--accent-moss);
+  border-radius: 4px 4px 0 0;
+}
+
+/* 水滴 */
+.extraction-container .drop {
+  width: 10px;
+  height: 10px;
+  background-color: var(--accent-amber);
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  position: absolute;
+  top: 45px;
+  opacity: 0;
+  animation: drop 3s infinite cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 8px rgba(193, 136, 65, 0.4);
+}
+
+/* 涟漪承载面 */
+.extraction-container .surface {
+  position: absolute;
+  bottom: 40px;
+  width: 80px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1px solid var(--border-line);
+}
+
+/* 涟漪扩散 */
+.extraction-container .ripple {
+  position: absolute;
+  bottom: 40px;
+  width: 80px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1px solid var(--accent-amber);
+  opacity: 0;
+  animation: rippleOut 3s infinite cubic-bezier(0.1, 0.8, 0.3, 1);
+}
+
+.extraction-container .ripple-2 {
+  animation-delay: 0.2s;
+}
+
+/* 终端日志区域 */
+.extraction-container .terminal {
+  margin-top: 40px;
+  width: 320px;
+  height: 80px;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 13px;
+  color: var(--text-secondary);
+  text-align: center;
+  line-height: 1.8;
+  position: relative;
+}
+
+.extraction-container .log-line {
+  position: absolute;
+  width: 100%;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all 0.5s ease;
+}
+
+.extraction-container .log-line.active {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.extraction-container .highlight {
+  color: var(--accent-amber);
+  font-weight: bold;
+}
+
+/* 动画关键帧 */
+@keyframes drop {
+  0% {
+      top: 40px;
+      opacity: 0;
+      transform: scale(0.8) stretch;
+      border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  }
+  15% {
+      top: 44px;
+      opacity: 1;
+      transform: scale(1.1);
+      border-radius: 50% 50% 50% 50% / 80% 80% 20% 20%;
+  }
+  30% {
+      top: 140px; /* 落到水面 */
+      opacity: 1;
+      transform: scale(0.6, 1.2); /* 拉长 */
+      border-radius: 50%;
+  }
+  32% {
+      top: 145px;
+      opacity: 0;
+      transform: scale(1.5, 0.4); /* 砸扁 */
+  }
+  100% {
+      opacity: 0;
+  }
+}
+
+@keyframes rippleOut {
+  0%, 30% {
+      transform: scale(0.5);
+      opacity: 0;
+  }
+  32% {
+      transform: scale(0.8);
+      opacity: 0.8;
+  }
+  60% {
+      transform: scale(1.8);
+      opacity: 0;
+  }
+  100% {
+      opacity: 0;
+  }
+}

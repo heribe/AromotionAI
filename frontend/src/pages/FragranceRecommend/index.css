@@ -1,0 +1,140 @@
+.recommend-page {
+  /* No special top-level classes needed if we use inline layout, but we can keep it for flexibility */
+}
+
+/* 方案卡片基础样式 */
+.plan-card {
+  transition: all 0.3s ease;
+  border: 1px solid var(--border-line);
+  background-color: var(--bg-paper);
+  background-image: var(--noise-light);
+  border-radius: 2px;
+  position: relative;
+  /* 初始化为透明且向下偏置，由 staggered-fade-up 动画接管 */
+  opacity: 0;
+  transform: translateY(20px);
+  animation: staggered-fade-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes staggered-fade-up {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 方案卡片更新高亮动画 */
+.plan-card.highlighted {
+  border-color: var(--accent-amber);
+  background-color: rgba(193, 136, 65, 0.02); /* 极淡的琥珀色 */
+  animation: pulse-border 1.5s ease-out 2; /* 闪烁两次 */
+}
+
+@keyframes pulse-border {
+  0%, 100% { border-color: var(--accent-amber); box-shadow: 0 0 0 rgba(193, 136, 65, 0); }
+  50% { border-color: var(--accent-amber); box-shadow: 0 0 12px rgba(193, 136, 65, 0.15); }
+}
+
+/* 香材变动动画 */
+.note-item {
+  transition: all 0.4s ease;
+}
+
+.note-item.changed {
+  background: rgba(193, 136, 65, 0.06);
+  border-left: 2px solid var(--accent-amber);
+  padding-left: 12px;
+  animation: note-fade-in 0.6s ease;
+}
+
+.note-item .changed-badge {
+  display: inline-block;
+  background: var(--accent-amber);
+  color: white;
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 2px;
+  margin-left: 8px;
+  animation: badge-pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes note-fade-in {
+  from { opacity: 0; transform: translateX(-10px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes badge-pop {
+  0% { transform: scale(0); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+/* 创作灵感样式 */
+.story-content {
+  font-style: italic;
+  line-height: 1.8;
+  color: var(--accent-moss);
+  padding: 16px 20px;
+  background: rgba(44, 62, 45, 0.03);
+  border-left: 2px solid var(--accent-moss);
+  border-radius: 0 2px 2px 0;
+  font-family: var(--font-serif);
+}
+
+/* 聊天气泡样式 */
+.message-bubble {
+  max-width: 85%;
+  padding: 16px 20px;
+  border-radius: 4px;
+  margin-bottom: 24px;
+  line-height: 1.6;
+  font-size: 15px;
+}
+
+.message-bubble.user {
+  background: var(--accent-amber);
+  color: white;
+  margin-left: auto;
+  border-bottom-right-radius: 0px;
+}
+
+.message-bubble.assistant {
+  background: var(--bg-paper);
+  border: 1px solid var(--border-line);
+  color: var(--text-primary);
+  border-bottom-left-radius: 0px;
+  box-shadow: 2px 2px 0px rgba(0,0,0,0.02);
+}
+
+/* 打字机指示器 */
+.typing-indicator {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.typing-indicator .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-secondary);
+  animation: typing-bounce 1.4s infinite ease-in-out;
+}
+
+.typing-indicator .dot:nth-child(1) { animation-delay: 0s; }
+.typing-indicator .dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-indicator .dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes typing-bounce {
+  0%, 80%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-6px); }
+}
+
+/* 冰山分析弹窗特定样式 */
+.iceberg-section {
+  padding: 24px 0;
+  border-bottom: 1px dashed var(--border-line);
+}
+.iceberg-section:last-child {
+  border-bottom: none;
+}
