@@ -89,7 +89,7 @@ Part2: 香调推荐
 ## 三、项目目录结构
 
 ```
-AromotionAI-main/
+<project_root>/
 ├── docs/                               # 开发文档
 │   ├── 00-global-dev-guide.md          # 全局开发文档（本文）
 │   ├── 01-part1-backend.md             # Part1 后端开发文档
