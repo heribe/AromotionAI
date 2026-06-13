@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Button, Typography, Modal, Spin } from 'antd';
+import { Button, Typography, Modal } from 'antd';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, RefreshCw, BarChart2 } from 'lucide-react';
+import { ArrowLeft, RefreshCw } from 'lucide-react';
 import { useFragranceStore } from '../../stores/useFragranceStore';
 import { PlanList } from './components/PlanList';
 import { ChatPanel } from './components/ChatPanel';

@@ -1,8 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Typography } from 'antd';
 import './ExtractionAnimation.css';
-
-const { Text } = Typography;
 
 const LOGS = [
   { text: '> 正在解析用户潜意识需求...', detail: 'EXTRACTING ICEBERG MODEL', delay: 0 },

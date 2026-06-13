@@ -87,13 +87,13 @@ const MOCK_SESSION_DATA: FragranceSessionData = {
 
 export const mockFragranceApi = {
   /** 获取初始 Session 数据 */
-  async getSession(sessionId: string): Promise<FragranceSessionData> {
+  async getSession(_sessionId: string): Promise<FragranceSessionData> {
     await delay(600);
     return MOCK_SESSION_DATA;
   },
 
   /** 获取历史对话记录 */
-  async getHistory(sessionId: string): Promise<{ messages: ChatMessage[] }> {
+  async getHistory(_sessionId: string): Promise<{ messages: ChatMessage[] }> {
     await delay(300);
     return {
       messages: [
@@ -109,7 +109,7 @@ export const mockFragranceApi = {
   },
 
   /** 与 AI 助手对话 */
-  async chat(sessionId: string, message: string): Promise<ChatResponse> {
+  async chat(_sessionId: string, message: string): Promise<ChatResponse> {
     await delay(1500); // 模拟大模型思考延迟
 
     // Mock: 演示方案一被修改的剧本
