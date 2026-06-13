@@ -24,7 +24,7 @@ export const FragranceRecommend: React.FC = () => {
       <Row gutter={40} style={{ flex: 1, minHeight: 0 }}>
         {/* 左侧：配方区 */}
         <Col span={14} style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-          <div className="ant-card" style={{ 
+          <div className="ledger-card" style={{ 
             padding: '40px 48px',
             flex: 1,
             overflowY: 'auto'
@@ -48,8 +48,8 @@ export const FragranceRecommend: React.FC = () => {
               ))}
             </div>
 
-            <div style={{ marginTop: 48, padding: 32, background: '#F5F3ED', border: '1px solid var(--border-line)', position: 'relative' }}>
-              <div style={{ position: 'absolute', top: -12, left: 32, background: '#F5F3ED', padding: '0 8px', color: 'var(--accent-moss)', fontFamily: 'var(--font-serif)', fontStyle: 'italic' }}>Inspiration</div>
+            <div style={{ marginTop: 48, padding: 32, background: 'var(--bg-ceramic)', border: '1px solid var(--border-line)', position: 'relative' }}>
+              <div style={{ position: 'absolute', top: -12, left: 32, background: 'var(--bg-ceramic)', padding: '0 8px', color: 'var(--accent-moss)', fontFamily: 'var(--font-serif)', fontStyle: 'italic' }}>Inspiration</div>
               <Paragraph style={{ fontStyle: 'italic', color: 'var(--accent-moss)', marginBottom: 0, fontFamily: 'var(--font-serif)', fontSize: 15, lineHeight: 1.8 }}>
                 "针对那些生活在一线城市、面临高压但内心渴望自然平静的独立女性。前调的佛手柑像破晓的阳光，中调的玫瑰不过分甜腻，尾调的木质与琥珀则像是给她们一个温暖的拥抱..."
               </Paragraph>
@@ -59,7 +59,7 @@ export const FragranceRecommend: React.FC = () => {
 
         {/* 右侧：对话区 */}
         <Col span={10} style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-          <div className="ant-card" style={{ 
+          <div className="ledger-card" style={{ 
             flex: 1,
             display: 'flex',
             flexDirection: 'column',
@@ -71,7 +71,7 @@ export const FragranceRecommend: React.FC = () => {
             
             <div style={{ flex: 1, padding: 20, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
               {/* Mock AI Message */}
-              <div style={{ alignSelf: 'flex-start', background: 'var(--bg-ceramic)', border: '1px solid var(--border-line)', padding: '12px 16px', borderRadius: '8px 8px 8px 0', maxWidth: '85%' }}>
+              <div style={{ alignSelf: 'flex-start', background: 'var(--bg-ceramic)', border: '1px solid var(--border-line)', padding: '12px 16px', borderRadius: '4px 4px 4px 0', maxWidth: '85%' }}>
                 <Text>我已经根据画像生成了初始方案。如果你觉得中调的玫瑰不够特别，我们可以尝试加入一点<Text strong style={{color: 'var(--accent-amber)'}}>藏红花</Text>来增加辛锐感。</Text>
               </div>
             </div>
@@ -85,7 +85,7 @@ export const FragranceRecommend: React.FC = () => {
                   onPressEnter={() => setChatInput('')}
                   style={{ borderRadius: 4 }}
                 />
-                <Button type="primary" icon={<Send size={16} />} style={{ borderRadius: 4, background: 'var(--accent-moss)' }} />
+                <Button type="primary" icon={<Send size={16} />} style={{ borderRadius: 4, background: 'var(--accent-amber)' }} />
               </div>
             </div>
           </div>

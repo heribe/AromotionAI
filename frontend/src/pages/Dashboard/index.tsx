@@ -24,23 +24,23 @@ export const Dashboard: React.FC = () => {
       <Row gutter={[32, 32]}>
         <Col span={8}>
           <Card bodyStyle={{ padding: '32px 24px' }}>
-            <Statistic title={<Text style={{fontFamily: 'var(--font-serif)', color: 'var(--text-secondary)', fontSize: 16}}>分析任务总数</Text>} value={12} suffix="项" valueStyle={{ color: 'var(--text-primary)', fontSize: 48, fontFamily: 'var(--font-serif)', fontWeight: 400 }} />
+            <Statistic title={<Text style={{fontFamily: 'var(--font-serif)', color: 'var(--text-secondary)', fontSize: 16}}>分析任务总数</Text>} value={12} suffix="项" valueStyle={{ color: 'var(--text-primary)', fontSize: 36, fontFamily: 'var(--font-serif)', fontWeight: 400 }} />
           </Card>
         </Col>
         <Col span={8}>
           <Card bodyStyle={{ padding: '32px 24px' }}>
-            <Statistic title={<Text style={{fontFamily: 'var(--font-serif)', color: 'var(--text-secondary)', fontSize: 16}}>生成香调方案</Text>} value={45} suffix="个" valueStyle={{ color: 'var(--accent-amber)', fontSize: 48, fontFamily: 'var(--font-serif)', fontWeight: 400 }} />
+            <Statistic title={<Text style={{fontFamily: 'var(--font-serif)', color: 'var(--text-secondary)', fontSize: 16}}>生成香调方案</Text>} value={45} suffix="个" valueStyle={{ color: 'var(--accent-amber)', fontSize: 36, fontFamily: 'var(--font-serif)', fontWeight: 400 }} />
           </Card>
         </Col>
         <Col span={8}>
           <Card bodyStyle={{ padding: '32px 24px' }}>
-            <Statistic title={<Text style={{fontFamily: 'var(--font-serif)', color: 'var(--text-secondary)', fontSize: 16}}>洞察博主画像</Text>} value={320} suffix="位" valueStyle={{ color: 'var(--text-primary)', fontSize: 48, fontFamily: 'var(--font-serif)', fontWeight: 400 }} />
+            <Statistic title={<Text style={{fontFamily: 'var(--font-serif)', color: 'var(--text-secondary)', fontSize: 16}}>洞察博主画像</Text>} value={320} suffix="位" valueStyle={{ color: 'var(--text-primary)', fontSize: 36, fontFamily: 'var(--font-serif)', fontWeight: 400 }} />
           </Card>
         </Col>
       </Row>
 
       <div style={{ marginTop: 64 }}>
-        <Title level={4} style={{ fontFamily: 'var(--font-serif)', color: 'var(--accent-moss)', fontStyle: 'italic', marginBottom: 24 }}>Recent Formulation Tasks</Title>
+        <Title level={4} style={{ fontFamily: 'var(--font-serif)', color: 'var(--accent-moss)', fontWeight: 400, marginBottom: 24 }}>近期调香任务 <Text style={{ fontStyle: 'italic', fontFamily: 'var(--font-serif)', fontSize: 14, color: 'var(--text-secondary)', fontWeight: 400 }}>Recent Formulation Tasks</Text></Title>
         <Card bodyStyle={{ padding: '32px 40px' }}>
           <Table 
             dataSource={mockTasks} 
@@ -50,7 +50,7 @@ export const Dashboard: React.FC = () => {
               { title: '任务名称', dataIndex: 'title', key: 'title' },
               { title: '状态', dataIndex: 'status', key: 'status', render: (text) => <span style={{ color: text === '进行中' ? 'var(--accent-amber)' : 'inherit' }}>{text}</span> },
               { title: '创建时间', dataIndex: 'date', key: 'date' },
-              { title: '操作', key: 'action', render: () => <a style={{ color: 'var(--accent-moss)' }}>查看报告</a> }
+              { title: '操作', key: 'action', render: () => <a style={{ color: 'var(--accent-amber)' }}>查看报告</a> }
             ]}
           />
         </Card>

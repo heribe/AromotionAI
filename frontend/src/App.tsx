@@ -16,7 +16,7 @@ function App() {
           borderRadius: 2,
           colorText: '#2A332C',
           colorBorder: '#CDD1CA',
-          fontFamily: "'Outfit', -apple-system, sans-serif",
+          fontFamily: "'Outfit', 'Noto Sans SC', system-ui, -apple-system, sans-serif",
         },
       }}
     >

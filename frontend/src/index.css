@@ -4,7 +4,11 @@
   /* 更加清透、带有极弱绿意和暖意的石材底色 */
   --bg-green: #EAECE6; 
   /* 干净的高级复古打印纸色 */
-  --bg-paper: #FDFDFB; 
+  --bg-paper: #FDFDFB;
+  /* 温暖的陶瓷/羊皮纸色调 */
+  --bg-ceramic: #F5F3ED;
+  /* 卡片背景色 */
+  --bg-card: var(--bg-paper);
   
   --text-primary: #2A332C; /* 更深的墨绿/炭灰，提升对比度 */
   --text-secondary: #717A73;
@@ -23,7 +27,7 @@
   --corner-star: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M5 0 C5 3, 7 5, 10 5 C7 5, 5 7, 5 10 C5 7, 3 5, 0 5 C3 5, 5 3, 5 0 Z' fill='%23C18841'/%3E%3C/svg%3E");
 
   --font-sans: 'Outfit', 'Noto Sans SC', system-ui, -apple-system, sans-serif;
-  --font-serif: 'Lora', 'STKaiti', 'KaiTi', 'Noto Serif SC', 'Playfair Display', 'Times New Roman', 'Georgia', serif;
+  --font-serif: 'Lora', 'Noto Serif SC', 'Georgia', serif;
 }
 
 body {
@@ -41,31 +45,39 @@ body {
   box-sizing: border-box;
 }
 
-/* 具有高级排版感的复古纸张卡片 */
-.ant-card {
-  box-shadow: 2px 2px 0px rgba(0,0,0,0.05) !important; /* 非常轻微的下沉立体感 */
-  border: 1px solid var(--border-line) !important; /* 柔和的外边框 */
-  background-color: var(--bg-paper) !important;
-  background-image: var(--noise-light) !important; /* 纸张纹理 */
-  border-radius: 2px !important; 
+/* =============================================
+   复古纸张卡片基础样式 (Ledger Card)
+   可同时用于 .ant-card 和自定义 .ledger-card
+   ============================================= */
+.ant-card,
+.ledger-card {
+  box-shadow: 2px 2px 0px rgba(0,0,0,0.05); /* 非常轻微的下沉立体感 */
+  border: 1px solid var(--border-line); /* 柔和的外边框 */
+  background-color: var(--bg-paper);
+  background-image: var(--noise-light); /* 纸张纹理 */
+  border-radius: 2px; 
   position: relative;
 }
 
 /* 卡片内层细线边框 */
-.ant-card::before {
+.ant-card::before,
+.ledger-card::before {
   content: '';
   position: absolute;
   top: 8px; left: 8px; right: 8px; bottom: 8px;
   border: 1px solid rgba(47, 54, 48, 0.12);
   pointer-events: none;
+  z-index: 0;
 }
 
 /* 卡片边角的精致芒星 (Sparkle) */
-.ant-card::after {
+.ant-card::after,
+.ledger-card::after {
   content: '';
   position: absolute;
   top: 5px; left: 5px; right: 5px; bottom: 5px;
   pointer-events: none;
+  z-index: 0;
   background-image: 
     var(--corner-star),
     var(--corner-star),
@@ -80,11 +92,18 @@ body {
   background-size: 7px 7px;
 }
 
+/* 确保卡片内容在伪元素之上 */
+.ant-card > *,
+.ledger-card > * {
+  position: relative;
+  z-index: 1;
+}
+
 /* 覆盖统计数字的字体样式，增加圆润感和古典感 */
 .ant-statistic-content {
   font-family: var(--font-serif) !important;
   color: var(--text-primary) !important;
-  font-size: 32px !important;
+  font-size: 28px !important;
 }
 .ant-statistic-title {
   font-family: var(--font-sans) !important;
