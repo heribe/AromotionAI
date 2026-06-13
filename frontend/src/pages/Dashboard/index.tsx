@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Card, Typography, Row, Col, Statistic, Table, Button, Input, Radio, Space, Modal, Tag, Progress } from 'antd';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, ArrowRight } from 'lucide-react';
+import { Plus, Search } from 'lucide-react';
 import { useAnalysisStore } from '../../stores/useAnalysisStore';
 import type { AnalysisTask } from '../../types/analysis';
 

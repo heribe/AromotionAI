@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, Typography, Row, Col } from 'antd';
+import { Card, Typography } from 'antd';
 import type { SubDimension } from '../../../types/analysis';
 import { CHART_COLORS } from '../../../utils/chartColors';
 

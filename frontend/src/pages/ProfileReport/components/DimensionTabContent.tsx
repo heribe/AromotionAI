@@ -3,7 +3,7 @@ import { Typography, Row, Col } from 'antd';
 import type { Dimension } from '../../../types/analysis';
 import { SubDimensionChart } from './SubDimensionChart';
 
-const { Text, Paragraph } = Typography;
+const { Paragraph } = Typography;
 
 interface DimensionTabContentProps {
   dimension: Dimension;

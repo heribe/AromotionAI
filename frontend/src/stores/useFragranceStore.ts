@@ -1,10 +1,9 @@
 import { create } from 'zustand';
-import type { 
-  FragranceSessionData, 
-  FragrancePlan, 
-  IcebergAnalysis, 
-  ChatMessage, 
-  NoteChangeAnimation 
+import type {
+  FragrancePlan,
+  IcebergAnalysis,
+  ChatMessage,
+  NoteChangeAnimation
 } from '../types/fragrance';
 import { mockFragranceApi } from '../services/mockFragranceData';
 import { message } from 'antd';
