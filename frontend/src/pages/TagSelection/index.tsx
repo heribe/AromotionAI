@@ -139,10 +139,10 @@ export const TagSelection: React.FC = () => {
       </div>
 
       {/* 提示文案 */}
-      <div style={{ 
-        padding: '16px 24px', 
-        background: 'var(--bg-ceramic)', 
-        borderLeft: '3px solid var(--accent-amber)',
+      <div style={{
+        padding: '16px 24px',
+        background: 'var(--bg-ceramic)',
+        border: '1px solid rgba(193, 136, 65, 0.3)',
         borderRadius: 2,
         marginBottom: 32,
         display: 'flex',
@@ -159,7 +159,7 @@ export const TagSelection: React.FC = () => {
       {/* 标签选择区 */}
       <Row gutter={[32, 32]}>
         {tagDimensions.map(dim => (
-          <Col span={12} key={dim.dimensionId}>
+          <Col xs={24} lg={12} key={dim.dimensionId}>
             <Card 
               bodyStyle={{ padding: '28px 32px' }}
               style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
@@ -177,11 +177,11 @@ export const TagSelection: React.FC = () => {
         ))}
       </Row>
 
-      {/* 底部悬浮预览栏 */}
+      {/* 底部悬浮预览栏：AppLayout 仅有顶部 Header，无 Sider，故左右各贴视口边缘 */}
       <div style={{
         position: 'fixed',
         bottom: 0,
-        left: 240, // 假设侧边栏宽度，因为实际是在 Layout 内部
+        left: 0,
         right: 0,
         background: 'var(--bg-paper)',
         borderTop: '1px solid var(--border-line)',
@@ -190,9 +190,7 @@ export const TagSelection: React.FC = () => {
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        zIndex: 10,
-        transform: 'translateX(0)', // 这里在实际应用中如果侧边栏自适应可能需要微调，现在假设占据了主内容区
-        width: 'calc(100% - 240px)' // 因为我们是左侧导航栏布局
+        zIndex: 10
       }}>
         <div style={{ flex: 1, marginRight: 32 }}>
           <Text style={{ display: 'block', fontSize: 13, color: 'var(--text-secondary)', marginBottom: 8 }}>已选标签预览</Text>
@@ -217,13 +215,12 @@ export const TagSelection: React.FC = () => {
         
         <Button
           type="primary"
+          className="btn-amber-primary"
           size="large"
           icon={<Sparkles size={16} />}
           onClick={handleGenerate}
-          style={{ 
-            borderRadius: 2, 
-            background: 'var(--accent-amber)', 
-            height: 48, 
+          style={{
+            height: 48,
             paddingInline: 32,
             fontSize: 16,
             flexShrink: 0

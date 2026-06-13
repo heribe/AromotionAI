@@ -224,5 +224,7 @@ implementation_plan.md
 skills-lock.json
 PRODUCT.md
 .agents/
+.claude/
+CLAUDE.md
 
 others

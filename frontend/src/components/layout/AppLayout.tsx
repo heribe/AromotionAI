@@ -1,5 +1,5 @@
-import React from 'react';
-import { Layout, Menu, Typography } from 'antd';
+import React, { Suspense } from 'react';
+import { Layout, Menu, Typography, Spin } from 'antd';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { FlaskConical, LayoutDashboard } from 'lucide-react';
 
@@ -24,13 +24,15 @@ export const AppLayout: React.FC = () => {
   ];
 
   return (
-    <Layout style={{ minHeight: '100vh' }}>
+    <Layout style={{ height: '100vh', overflow: 'hidden' }}>
       <Header style={{ 
         display: 'flex', 
         alignItems: 'center', 
         padding: '0 40px',
         background: 'var(--bg-card)',
-        borderBottom: '1px solid var(--border-line)'
+        borderBottom: '1px solid var(--border-line)',
+        flexShrink: 0,
+        zIndex: 10
       }}>
         <div style={{ display: 'flex', alignItems: 'center', marginRight: '40px' }}>
           <FlaskConical color="var(--accent-moss)" size={24} style={{ marginRight: 12 }} />
@@ -48,8 +50,30 @@ export const AppLayout: React.FC = () => {
         />
       </Header>
       
-      <Content style={{ padding: '40px', maxWidth: 1400, margin: '0 auto', width: '100%' }}>
-        <Outlet />
+      <Content style={{ 
+        flex: 1,
+        overflowY: 'auto',
+        display: 'flex',
+        flexDirection: 'column'
+      }}>
+        <div style={{ 
+          padding: location.pathname.startsWith('/recommend') ? 0 : '40px', 
+          maxWidth: location.pathname.startsWith('/recommend') ? '100%' : 1400, 
+          margin: '0 auto', 
+          width: '100%', 
+          flex: location.pathname.startsWith('/recommend') ? '1 1 0%' : '1 0 auto', 
+          display: 'flex', 
+          flexDirection: 'column',
+          overflow: location.pathname.startsWith('/recommend') ? 'hidden' : 'visible'
+        }}>
+          <Suspense fallback={
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Spin size="large" />
+            </div>
+          }>
+            <Outlet />
+          </Suspense>
+        </div>
       </Content>
     </Layout>
   );

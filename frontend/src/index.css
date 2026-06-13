@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Outfit:wght@300;400;500;600&family=Noto+Serif+SC:wght@400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;600&display=swap');
+/* 字体改为通过 index.html 的 <link> 异步加载，避免阻塞 CSS 关键渲染路径 */
 
 :root {
   /* 更加清透、带有极弱绿意和暖意的石材底色 */
@@ -11,12 +11,14 @@
   --bg-card: var(--bg-paper);
   
   --text-primary: #2A332C; /* 更深的墨绿/炭灰，提升对比度 */
-  --text-secondary: #717A73;
-  --text-light: #2A332C; 
+  --text-secondary: #636B65; /* 调深以保证 ≥4.5:1 对比度 (WCAG AA) */
+  --text-light: #2A332C;
   
   --border-line: #CDD1CA;
   --border-dark: #2A332C;
   --accent-amber: #C18841; /* 更明亮温暖的琥珀金色 */
+  --accent-amber-hover: #AA7839; /* 主按钮 hover 态，琥珀向深 */
+  --accent-amber-active: #946A32; /* 主按钮 active 态 */
   --accent-moss: #2C3E2D;
   
   /* 极度微弱的纸张颗粒噪声 */
@@ -43,6 +45,37 @@ body {
 
 * {
   box-sizing: border-box;
+}
+
+/* =============================================
+   主行动按钮：琥珀色（统一全应用主 CTA 的视觉与交互状态）
+   用法：<Button type="primary" className="btn-amber-primary" icon={...}>...</Button>
+   尺寸（size / height / paddingInline）仍由调用方按需通过 props 或 inline style 指定。
+   ============================================= */
+.ant-btn.btn-amber-primary:not(:disabled) {
+  background-color: var(--accent-amber) !important;
+  border-color: var(--accent-amber) !important;
+  border-radius: 2px !important;
+  color: #fff !important;
+  box-shadow: none !important;
+  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+}
+.ant-btn.btn-amber-primary:not(:disabled):hover {
+  background-color: var(--accent-amber-hover) !important;
+  border-color: var(--accent-amber-hover) !important;
+}
+.ant-btn.btn-amber-primary:not(:disabled):active {
+  background-color: var(--accent-amber-active) !important;
+  border-color: var(--accent-amber-active) !important;
+  transform: translateY(1px);
+}
+.ant-btn.btn-amber-primary:focus-visible {
+  outline: 2px solid var(--accent-amber);
+  outline-offset: 2px;
+}
+/* Modal.confirm 的确认按钮同样走此类（通过 okButtonProps 注入） */
+.ant-btn-primary.btn-amber-primary:not(:disabled) {
+  background-color: var(--accent-amber) !important;
 }
 
 /* =============================================

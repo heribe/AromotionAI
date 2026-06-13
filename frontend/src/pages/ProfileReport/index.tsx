@@ -51,9 +51,9 @@ export const ProfileReport: React.FC = () => {
           </Button>
           <Button
             type="primary"
+            className="btn-amber-primary"
             icon={<ArrowRight size={14} />}
             onClick={() => navigate(`/tags/${taskId}`)}
-            style={{ borderRadius: 2, background: 'var(--accent-amber)' }}
           >
             前往标签筛选
           </Button>
@@ -130,7 +130,8 @@ export const ProfileReport: React.FC = () => {
           size="large"
           icon={<ArrowRight size={16} />}
           onClick={() => navigate(`/tags/${taskId}`)}
-          style={{ borderRadius: 2, background: 'var(--accent-amber)', paddingInline: 40, height: 48, fontSize: 16 }}
+          className="btn-amber-primary"
+          style={{ paddingInline: 40, height: 48, fontSize: 16 }}
         >
           前往标签筛选
         </Button>
