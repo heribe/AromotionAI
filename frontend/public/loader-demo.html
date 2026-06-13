@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI调香师 - 萃取中...</title>
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400&family=Space+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-paper: #F8F6F0;
+            --accent-moss: #2F3630;
+            --accent-amber: #C18841;
+            --text-secondary: rgba(47, 54, 48, 0.6);
+            --border-line: rgba(47, 54, 48, 0.1);
+        }
+
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: var(--bg-paper);
+            font-family: 'Lora', serif;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* 顶部装饰线 */
+        .decor-line {
+            position: absolute;
+            top: 40px;
+            width: 1px;
+            height: 80px;
+            background: var(--accent-amber);
+            opacity: 0.5;
+        }
+
+        /* 动画容器 */
+        .animation-container {
+            position: relative;
+            width: 120px;
+            height: 200px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* 滴管针头 */
+        .dropper {
+            width: 2px;
+            height: 40px;
+            background-color: var(--accent-moss);
+            position: relative;
+        }
+        
+        .dropper::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: -3px;
+            width: 8px;
+            height: 4px;
+            background-color: var(--accent-moss);
+            border-radius: 4px 4px 0 0;
+        }
+
+        /* 水滴 */
+        .drop {
+            width: 10px;
+            height: 10px;
+            background-color: var(--accent-amber);
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            position: absolute;
+            top: 45px;
+            opacity: 0;
+            animation: drop 3s infinite cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 8px rgba(193, 136, 65, 0.4);
+        }
+
+        /* 涟漪承载面 */
+        .surface {
+            position: absolute;
+            bottom: 40px;
+            width: 80px;
+            height: 20px;
+            border-radius: 50%;
+            border: 1px solid var(--border-line);
+        }
+
+        /* 涟漪扩散 */
+        .ripple {
+            position: absolute;
+            bottom: 40px;
+            width: 80px;
+            height: 20px;
+            border-radius: 50%;
+            border: 1px solid var(--accent-amber);
+            opacity: 0;
+            animation: rippleOut 3s infinite cubic-bezier(0.1, 0.8, 0.3, 1);
+        }
+
+        .ripple-2 {
+            animation-delay: 0.2s;
+        }
+
+        /* 终端日志区域 */
+        .terminal {
+            margin-top: 40px;
+            width: 320px;
+            height: 80px;
+            font-family: 'Space Mono', monospace;
+            font-size: 13px;
+            color: var(--text-secondary);
+            text-align: center;
+            line-height: 1.8;
+            position: relative;
+        }
+
+        .log-line {
+            position: absolute;
+            width: 100%;
+            opacity: 0;
+            transform: translateY(10px);
+            animation: logFadeInOut 9s infinite;
+        }
+
+        .log-line:nth-child(1) { animation-delay: 0s; }
+        .log-line:nth-child(2) { animation-delay: 3s; }
+        .log-line:nth-child(3) { animation-delay: 6s; }
+
+        .highlight {
+            color: var(--accent-amber);
+            font-weight: bold;
+        }
+
+        /* 动画关键帧 */
+        @keyframes drop {
+            0% {
+                top: 40px;
+                opacity: 0;
+                transform: scale(0.8) stretch;
+                border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            }
+            15% {
+                top: 44px;
+                opacity: 1;
+                transform: scale(1.1);
+                border-radius: 50% 50% 50% 50% / 80% 80% 20% 20%;
+            }
+            30% {
+                top: 140px; /* 落到水面 */
+                opacity: 1;
+                transform: scale(0.6, 1.2); /* 拉长 */
+                border-radius: 50%;
+            }
+            32% {
+                top: 145px;
+                opacity: 0;
+                transform: scale(1.5, 0.4); /* 砸扁 */
+            }
+            100% {
+                opacity: 0;
+            }
+        }
+
+        @keyframes rippleOut {
+            0%, 30% {
+                transform: scale(0.5);
+                opacity: 0;
+            }
+            32% {
+                transform: scale(0.8);
+                opacity: 0.8;
+            }
+            60% {
+                transform: scale(1.8);
+                opacity: 0;
+            }
+            100% {
+                opacity: 0;
+            }
+        }
+
+        @keyframes logFadeInOut {
+            0%, 5% { opacity: 0; transform: translateY(10px); }
+            10%, 25% { opacity: 1; transform: translateY(0); }
+            30%, 100% { opacity: 0; transform: translateY(-10px); }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="decor-line"></div>
+
+    <div class="animation-container">
+        <!-- 滴管 -->
+        <div class="dropper"></div>
+        <!-- 滴落的精油 -->
+        <div class="drop"></div>
+        
+        <!-- 底部的涟漪 -->
+        <div class="surface"></div>
+        <div class="ripple"></div>
+        <div class="ripple ripple-2"></div>
+    </div>
+
+    <!-- 打字机日志 -->
+    <div class="terminal">
+        <div class="log-line">
+            > 正在解析 <span class="highlight">用户潜意识需求</span> ...<br>
+            <span style="font-size: 11px; opacity: 0.6;">EXTRACTING ICEBERG MODEL</span>
+        </div>
+        <div class="log-line">
+            > 正在匹配 <span class="highlight">香调维度库</span> ...<br>
+            <span style="font-size: 11px; opacity: 0.6;">MAPPING FRAGRANCE FAMILIES</span>
+        </div>
+        <div class="log-line">
+            > 正在重组 <span class="highlight">配方分子</span> ...<br>
+            <span style="font-size: 11px; opacity: 0.6;">COMPOSING FORMULAS</span>
+        </div>
+    </div>
+
+    <div style="position: absolute; bottom: 40px; font-style: italic; color: var(--accent-moss); font-size: 14px; opacity: 0.4;">
+        Aromotion AI
+    </div>
+
+</body>
+</html>

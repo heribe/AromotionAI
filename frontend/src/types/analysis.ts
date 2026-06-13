@@ -4,7 +4,7 @@
  */
 
 // ========== 任务相关 ==========
-export type TaskStatus = 'pending' | 'collecting' | 'analyzing' | 'completed' | 'failed';
+export type TaskStatus = 'pending' | 'collecting' | 'analyzing' | 'waiting_tags' | 'processing' | 'completed' | 'failed';
 
 export interface AnalysisTask {
   taskId: string;
