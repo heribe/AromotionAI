@@ -116,7 +116,18 @@ export const useFragranceStore = create<FragranceState>((set, get) => ({
     set({ messages: [...messages, userMsg], isSending: true });
 
     try {
-      // 2. 调用 API
+      /* =========================================================================
+       * [TODO] 接入真实后端时的替换逻辑（流式对话与配方更新）：
+       * =========================================================================
+       * 1. 替换 mockFragranceApi.chat 为真正的 SSE / WebSocket 或 Fetch 流式调用。
+       * 2. 如果是流式响应（SSE）：
+       *    - 需要在本地维护一个临时的 assistantMsg，每收到一个 chunk 就拼接 content 并更新 messages 数组。
+       * 3. 流结束时，如果后端返回了 updatedPlans：
+       *    - 执行下方的计划替换逻辑，并设置 changeAnimation 触发卡片高亮与香材[NEW]动效。
+       * =========================================================================
+       */
+      
+      // 2. 调用 Mock API
       const response = await mockFragranceApi.chat(sessionId, text);
       
       // 3. 处理 Assistant 回复

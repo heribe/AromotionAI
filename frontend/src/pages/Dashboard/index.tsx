@@ -27,6 +27,17 @@ export const Dashboard: React.FC = () => {
 
   useEffect(() => {
     fetchTaskList();
+    
+    /* =========================================================================
+     * [TODO] 接入真实后端时的替换逻辑（首页轮询）：
+     * =========================================================================
+     * Dashboard 需要实时反映进度，所以需要开启轮询：
+     * const timer = setInterval(() => {
+     *   fetchTaskList();
+     * }, 10000); // 比如每10秒查一次
+     * return () => clearInterval(timer);
+     * =========================================================================
+     */
   }, [fetchTaskList]);
 
   // 按状态分类
@@ -41,7 +52,17 @@ export const Dashboard: React.FC = () => {
     runningCount: runningTasks.length,
   };
 
-  const handleCreateTask = () => {
+  const handleCreateTask = async () => {
+    /* =========================================================================
+     * [TODO] 接入真实后端时的替换逻辑（新建分析）：
+     * =========================================================================
+     * 1. 提取输入框的数据调用真实 API:
+     *    await backendApi.createTask(bloggerUrl, analysisLevel);
+     * 2. 调用成功后刷新列表:
+     *    fetchTaskList();
+     * =========================================================================
+     */
+     
     // Mock: 直接关闭并刷新
     setCreateModalOpen(false);
     setBloggerUrl('');

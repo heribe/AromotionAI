@@ -39,12 +39,25 @@ export const TagSelection: React.FC = () => {
     allSelectedTagsList.push(...item.tags);
   });
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     if (allSelectedTagsList.length === 0) {
       message.warning('请至少保留一个标签用于生成推荐！');
       return;
     }
-    // Part2入口，实际对接时需要调用接口拿到 sessionId
+    
+    /* =========================================================================
+     * [TODO] 接入真实后端时的替换逻辑：
+     * =========================================================================
+     * 1. 整理好选中的标签，调用真实后端接口（如 POST /api/v1/fragrance/generate）
+     *    const res = await backendApi.submitTags(taskId, getSelectedTags());
+     * 2. 调用成功后，后端任务状态可能变为 processing，拿到 sessionId
+     *    const newSessionId = res.sessionId || taskId;
+     * 3. 跳转到调配室页面：
+     *    navigate(`/recommend/${newSessionId}`);
+     * =========================================================================
+     */
+     
+    // 当前 Mock 环境下直接写死跳转
     navigate('/recommend');
   };
 
