@@ -231,7 +231,7 @@ npm run dev       # → http://localhost:5173
 ```bash
 cd backend
 uv sync                                  # 安装依赖
-cp .env.example .env                     # 编辑 .env，填入 GLM_API_KEY（必填）
+cp .env.example .env                     # 复制环境变量模板（下一步编辑它）
 uv run playwright install chromium       # 评论采集需要的浏览器（约 294MB）
 uv run uvicorn app.main:app --reload --port 8000   # → http://localhost:8000
 ```
@@ -239,6 +239,33 @@ uv run uvicorn app.main:app --reload --port 8000   # → http://localhost:8000
 - API 文档（Swagger）：http://localhost:8000/docs
 - 健康检查：http://localhost:8000/health
 - 启动后 SQLite 自动建表，零迁移开箱即用
+
+#### 环境变量（编辑 `backend/.env`）
+
+```ini
+# 必填 —— 智谱开放平台 API Key，去 https://open.bigmodel.cn/ 注册并创建 API Key
+GLM_API_KEY=你的key
+
+# Coding Plan 套餐专用端点；标准套餐留空即可
+ZHIPUAI_BASE_URL=https://open.bigmodel.cn/api/coding/paas/v4
+
+# 可选：覆盖默认模型（默认 glm-5.2 文本 / glm-4.6v 视觉）
+# GLM_MODEL=glm-5.2
+# GLM_VISION_MODEL=glm-4.6v
+
+# 数据库 / 存储（开发默认 SQLite，零配置）
+DATABASE_URL=sqlite:///./data/db/aromotion.db
+```
+
+| 变量 | 必填 | 说明 |
+|---|---|---|
+| `GLM_API_KEY` | ✅ | 智谱 GLM API Key，项目运行的核心凭据 |
+| `ZHIPUAI_BASE_URL` | — | Coding Plan 套餐专用端点；标准套餐留空自动走 `/api/paas/v4/` |
+| `GLM_MODEL` / `GLM_VISION_MODEL` | — | 覆盖默认文本/视觉模型 |
+| `DATABASE_URL` | — | 开发用 SQLite（默认）；生产建议改 PostgreSQL |
+| `CORS_ORIGINS` | — | 允许直连后端的跨域来源，开发默认 `http://localhost:5173` |
+
+> 完整变量（含存储、Cookie 目录等）见 [`backend/.env.example`](backend/.env.example) 与 [`backend/README.md`](backend/README.md)。
 
 ### 抖音 Cookie 配置
 
