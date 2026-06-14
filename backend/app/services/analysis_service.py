@@ -114,6 +114,12 @@ class AnalysisService:
 
     async def run_analysis(self, task_id: str) -> ProfileReport:
         """运行完整的博主/粉丝画像分析管道。"""
+        # 后台异步执行（经 task_manager.submit），不能用 create 请求级 session
+        # （请求返回后 get_db 即 close，导致 task 状态更新不持久化）。创建独立 session，
+        # 确保 pipeline 全程有效并在结束关闭。
+        from app.database import SessionLocal
+        own_db = SessionLocal()
+        self.db = own_db
         # Step 1: 博主与帖子采集 (5% - 10%)
         task = self.db.query(AnalysisTask).filter(AnalysisTask.id == task_id).first()
         if not task:
@@ -475,3 +481,9 @@ class AnalysisService:
                 {"status": "failed", "message": f"分析过程中出错: {str(e)}"},
             )
             raise e
+        finally:
+            # 独立 session 由 run_analysis 自己关闭（后台异步，不能依赖请求级 session）
+            try:
+                own_db.close()
+            except Exception:
+                pass
