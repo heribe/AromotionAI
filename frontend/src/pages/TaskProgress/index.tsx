@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, Typography, Progress, Tag, Button, Space, Spin } from 'antd';
-import { CheckCircle, Loader, Circle, AlertCircle, ArrowLeft } from 'lucide-react';
+import { CheckCircle, Loader, Circle, MinusCircle, AlertCircle, ArrowLeft } from 'lucide-react';
 import { useAnalysisStore } from '../../stores/useAnalysisStore';
 import type { SubStepStatus } from '../../services/sse';
 
@@ -12,6 +12,7 @@ const StepIcon: React.FC<{ status: SubStepStatus }> = ({ status }) => {
   if (status === 'completed') return <CheckCircle size={18} color="var(--accent-moss)" />;
   if (status === 'running')
     return <Loader size={18} color="var(--accent-amber)" className="ant-spin-dot" />;
+  if (status === 'skipped') return <MinusCircle size={18} color="var(--text-secondary)" />;
   return <Circle size={18} color="var(--text-secondary)" />;
 };
 
@@ -182,6 +183,11 @@ export const TaskProgress: React.FC = () => {
                 {step.status === 'running' && !stepSummaries[step.name] && (
                   <Text style={{ display: 'block', fontSize: 13, color: 'var(--accent-amber)', marginTop: 4 }}>
                     正在处理…
+                  </Text>
+                )}
+                {step.status === 'skipped' && !stepSummaries[step.name] && (
+                  <Text style={{ display: 'block', fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>
+                    已跳过（当前模式不执行此步骤）
                   </Text>
                 )}
               </div>

@@ -81,6 +81,15 @@ class _SubStepTracker:
         if name in self._states:
             self._states[name] = "completed"
 
+    def set_skipped(self, name: str) -> None:
+        """标记子步骤为「已跳过」（如 quick 模式关闭评论者分析）。
+
+        与 pending（等待执行）区分开，让前端能如实展示「此步未跑」而非
+        「等待中」，避免用户误以为流程卡住。
+        """
+        if name in self._states:
+            self._states[name] = "skipped"
+
     def snapshot(self) -> list[dict[str, str]]:
         return [{"name": n, "status": self._states[n]} for n in SUB_STEP_NAMES]
 
@@ -372,6 +381,10 @@ class AnalysisService:
                 self.db.commit()
 
                 sub_steps.set_completed("评论者分析")
+            else:
+                # 评论者分析被配置关闭（如 quick 模式）→ 标记已跳过，
+                # 与 pending 区分，避免前端误展示为「等待中」。
+                sub_steps.set_skipped("评论者分析")
 
             await self.task_manager.emit(
                 task_id,

@@ -20,7 +20,7 @@
  */
 
 /** 子步骤状态 */
-export type SubStepStatus = 'pending' | 'running' | 'completed';
+export type SubStepStatus = 'pending' | 'running' | 'completed' | 'skipped';
 
 /** 单个子步骤（固定 7 个，名称顺序与后端 analysis_service 一致） */
 export interface ProgressSubStep {
