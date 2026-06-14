@@ -36,29 +36,33 @@ class DouyinCollector(BaseCollector):
 
     async def _get_cookies(self) -> tuple[list[dict], dict[str, str]]:
         """
-        获取 Cookie，支持 DB 读取与磁盘 Fallback 降级。
+        获取 Cookie：DB 优先（生产路径），DB 查无则回退磁盘文件。
         使用 Lock 防范多任务并发时的 Cookie 读取冲突。
-        """
-        if self.db is None:
-            # Fallback to local disk json if db is not provided
-            cookie_dir = settings.COOKIE_DIR
-            if not os.path.isabs(cookie_dir):
-                cookie_dir = str((settings.BASE_DIR / cookie_dir).resolve())
-            cookie_file = os.path.join(cookie_dir, "douyin.json")
-            if os.path.exists(cookie_file):
-                try:
-                    with open(cookie_file, "r", encoding="utf-8") as f:
-                        cookie_data = json.load(f)
-                        return cookie_data, self._flatten_cookies(cookie_data)
-                except Exception:
-                    pass
-            return [], {}
 
-        async with self._cookie_lock:
-            cookie_record = await self.cookie_service.get_valid_cookie(self.db, "douyin")
-            if cookie_record and cookie_record.cookie_data:
-                return cookie_record.cookie_data, self._flatten_cookies(cookie_record.cookie_data)
-            return [], {}
+        部署时即使前端没有 Cookie 导入功能，把 cookie 文件放到
+        ``data/cookies/douyin.json``（浏览器导出的 JSON 数组格式）即可被采集器读取；
+        前端将来做了导入则写入 DB，DB 命中优先使用。
+        """
+        # 1. DB 优先（如果 db 可用）——前端导入或 seed 写入的 cookie 走这里
+        if self.db is not None:
+            async with self._cookie_lock:
+                cookie_record = await self.cookie_service.get_valid_cookie(self.db, "douyin")
+                if cookie_record and cookie_record.cookie_data:
+                    return cookie_record.cookie_data, self._flatten_cookies(cookie_record.cookie_data)
+
+        # 2. DB 无 cookie（或 db=None）：回退磁盘文件 data/cookies/douyin.json
+        cookie_dir = settings.COOKIE_DIR
+        if not os.path.isabs(cookie_dir):
+            cookie_dir = str((settings.BASE_DIR / cookie_dir).resolve())
+        cookie_file = os.path.join(cookie_dir, "douyin.json")
+        if os.path.exists(cookie_file):
+            try:
+                with open(cookie_file, "r", encoding="utf-8") as f:
+                    cookie_data = json.load(f)
+                    return cookie_data, self._flatten_cookies(cookie_data)
+            except Exception:
+                pass
+        return [], {}
 
     def _load_mock_data(self, filename: str) -> dict | list:
         # 查找 mock 数据，优先从 tests/mock_data，然后 tests/e2e/mock_data，最后如果都不存在则返回默认数据
