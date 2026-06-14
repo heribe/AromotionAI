@@ -829,6 +829,38 @@ class CookieService:
         return cookie
 ```
 
+### 8.3 Cookie 文件 Fallback（部署用）
+
+采集器（`DouyinCollector._get_cookies`）获取 Cookie 的优先级：
+
+1. **DB 优先**：通过 `CookieService.get_valid_cookie` 查 `platform_cookies` 表（前端 `POST /cookies/upload` 或 seed 写入）。
+2. **磁盘文件回退**：DB 查无时，自动读取 `data/cookies/{platform}.json`（浏览器导出的 JSON 数组格式）。
+
+> 这一 fallback 使**部署阶段无需前端导入**也能跑通采集——服务器上把 Cookie 文件放到指定路径即可。8.2 中 `get_valid_cookie` 的 `_load_from_config` 即对应此磁盘路径。
+
+**部署流程**（前端暂无 Cookie 导入功能时的标准做法）：
+
+1. 浏览器登录抖音后，用 Cookie 导出插件（如 EditThisCookie）导出为 **JSON 数组**格式。
+2. 放到服务器的 `backend/data/cookies/douyin.json`：
+   - 该路径在 `.gitignore` 中，不会进仓库；
+   - 部署时用 `scp` / 挂载卷 / CI 注入 把文件放进容器对应路径。
+3. 启动服务，采集器 DB 查无 → 自动读磁盘文件 → 采集正常。
+4. Cookie 失效后，替换该文件并重启服务即可。
+5. 将来前端实现了导入，写入 DB 后优先使用 DB（文件降为兜底）。
+
+**文件格式**（与 `POST /cookies/upload` 的 `file` 字段一致）：
+
+```json
+[
+  {"name": "ttwid", "value": "...", "domain": ".douyin.com"},
+  {"name": "sessionid", "value": "...", "domain": ".douyin.com"}
+]
+```
+
+**关键 Cookie**：`ttwid`（设备令牌，反爬核心）、`sessionid`/`sessionid_ss`（登录态）、`sid_guard`、`s_v_web_id`、`odin_tt`、`passport_csrf_token`、`UIFID` 等；评论的 `ip_label`（IP 属地）是粉丝地域画像的真实数据来源（见 `PROGRESS.md` L4 验证记录）。
+
+**配置项**：Cookie 目录由 `COOKIE_DIR` 环境变量控制（默认 `./data/cookies`，相对 `backend/`），完整配置见 `backend/.env.example`。
+
 ---
 
 ## 九、四维度标签体系

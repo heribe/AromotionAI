@@ -184,9 +184,9 @@ npm run dev       # 启动开发服务器 → http://localhost:5173
 
 ### 4. 关于后端
 
-后端（FastAPI）目前 **In Development**，暂不可运行。前端当前通过 `src/services/mockData.ts` 和 `mockFragranceData.ts` 提供模拟数据，**无需后端即可完整预览所有页面**。
+后端（FastAPI）已开发完成并可运行，启动方式、Cookie 配置、测试等详见 [`backend/README.md`](backend/README.md)。
 
-后端开发完成后，启动方式将在本节补充（基于 `uv` 工具链）。
+前端当前仍可通过 `src/services/mockData.ts` 和 `mockFragranceData.ts` 提供模拟数据，**无需后端即可预览所有页面**；接入真实后端时按 `backend/README.md` 启动即可。
 
 ---
 
