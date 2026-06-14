@@ -63,27 +63,37 @@ export const useFragranceStore = create<FragranceState>((set, get) => ({
 
   initSession: async (sessionId: string) => {
     // 已有会话：从后端拉取 session + 历史
+    // 若 session 正在 generating（如从历史记录进入一个正在重新生成的工坊），
+    // 保持 isLoading=true 显示等待动画，并轮询直到完成，避免误显示「暂无方案」。
     set({ isLoading: true, sessionId });
-    try {
-      const [sessionData, historyData] = await Promise.all([
-        getSession(sessionId),
-        getHistory(sessionId),
-      ]);
-      set({
-        sessionId: sessionData.sessionId,
-        taskId: sessionData.taskId,
-        selectedTags: sessionData.selectedTags,
-        plans: sessionData.recommendations,
-        icebergAnalysis: sessionData.icebergAnalysis,
-        messages: historyData,
-        isLoading: false,
-      });
-    } catch (err) {
-      console.error(err);
-      const msg = err instanceof ApiError ? err.message : '加载会话失败';
-      message.error(msg);
-      set({ isLoading: false });
-    }
+    const poll = async (): Promise<void> => {
+      try {
+        const [sessionData, historyData] = await Promise.all([
+          getSession(sessionId),
+          getHistory(sessionId),
+        ]);
+        if (sessionData.status === 'generating') {
+          // 仍在生成，2s 后重试
+          await new Promise(r => setTimeout(r, 2000));
+          return poll();
+        }
+        set({
+          sessionId: sessionData.sessionId,
+          taskId: sessionData.taskId,
+          selectedTags: sessionData.selectedTags,
+          plans: sessionData.recommendations,
+          icebergAnalysis: sessionData.icebergAnalysis,
+          messages: historyData,
+          isLoading: false,
+        });
+      } catch (err) {
+        console.error(err);
+        const msg = err instanceof ApiError ? err.message : '加载会话失败';
+        message.error(msg);
+        set({ isLoading: false });
+      }
+    };
+    await poll();
   },
 
   generateAndLoad: async (

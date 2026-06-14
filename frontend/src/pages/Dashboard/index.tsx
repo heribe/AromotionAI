@@ -11,7 +11,7 @@ const { Title, Text, Paragraph } = Typography;
 /** 状态标签颜色映射 */
 const statusConfig: Record<string, { color: string; label: string }> = {
   completed: { color: 'var(--accent-moss)', label: '已完成' },
-  processing: { color: 'var(--accent-amber)', label: '生成配方中' },
+  processing: { color: 'var(--accent-amber)', label: '调香推荐中' },
   analyzing: { color: 'var(--accent-amber)', label: '分析中' },
   collecting: { color: 'var(--accent-amber)', label: '采集中' },
   waiting_tags: { color: 'var(--accent-amber)', label: '待筛选标签' },

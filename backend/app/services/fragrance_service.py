@@ -200,7 +200,14 @@ class FragranceService:
         # 5. 融合画像
         fused_profile = self._build_fused_profile(req.task_id, report, bw, aw)
 
-        # 6. 创建 session（generating 态先落库）
+        # 6. 创建 session（generating 态先落库）+ task 标记为「调香推荐中」
+        #    task 从 completed → processing，让前端 Dashboard 把它从「历史记录」
+        #    提到「进行中」，用户能感知香调正在生成。progress 回退到 90 表示
+        #    「画像分析已完成、调香进行中」，避免进度条显示满格像已到底。
+        task.status = "processing"
+        task.current_step = "正在生成香调方案"
+        task.progress = 90
+        self.db.add(task)
         session = FragranceSession(
             id=str(uuid.uuid4()),
             task_id=req.task_id,
@@ -242,13 +249,15 @@ class FragranceService:
                 )
         except FragranceEngineError:
             self._mark_session_error(session)
+            self._restore_task_completed(task)
             raise
         except Exception as e:
             logger.exception(f"generate: engine failure for session {session.id}")
             self._mark_session_error(session)
+            self._restore_task_completed(task)
             raise FragranceEngineError(f"Fragrance engine failed: {e}") from e
 
-        # 8. 持久化结果
+        # 8. 持久化结果 + task 恢复 completed
         session.recommendations = {
             "iceberg_analysis": result.get("iceberg_analysis") or {
                 "surface": "",
@@ -259,6 +268,9 @@ class FragranceService:
         }
         session.status = SESSION_STATUS_COMPLETED
         session.updated_at = _now()
+        task.status = "completed"
+        task.current_step = "分析完成"
+        task.progress = 100
         self.db.commit()
 
         # 9. 初始 assistant 消息（§2.1 业务逻辑 + §2.5 history msg_1）
@@ -370,8 +382,15 @@ class FragranceService:
         )
         fused_profile = self._build_fused_profile(session.task_id, report, bw, aw)
 
+        # session 与 task 同步进入生成态（task → processing），让前端 Dashboard
+        # 把任务从「历史记录」提到「进行中」，工坊页也能据此显示等待动画。
+        # progress 回退到 90 表示「调香进行中」，避免进度条显示满格。
         session.status = SESSION_STATUS_GENERATING
         session.updated_at = _now()
+        task.status = "processing"
+        task.current_step = "正在重新生成香调方案"
+        task.progress = 90
+        self.db.add(task)
         self.db.commit()
 
         try:
@@ -392,13 +411,15 @@ class FragranceService:
                 )
         except FragranceEngineError:
             self._mark_session_error(session)
+            self._restore_task_completed(task)
             raise
         except Exception as e:
             logger.exception(f"regenerate: engine failure for session {session_id}")
             self._mark_session_error(session)
+            self._restore_task_completed(task)
             raise FragranceEngineError(f"Fragrance engine failed: {e}") from e
 
-        # 覆盖方案与标签
+        # 覆盖方案与标签 + task 恢复 completed
         session.selected_tags = selected_tags
         session.recommendations = {
             "iceberg_analysis": result.get("iceberg_analysis") or {
@@ -410,6 +431,9 @@ class FragranceService:
         }
         session.status = SESSION_STATUS_COMPLETED
         session.updated_at = _now()
+        task.status = "completed"
+        task.current_step = "分析完成"
+        task.progress = 100
 
         # 清空旧 chat 历史（方案变了，旧对话不再相关）
         self.db.query(ChatMessage).filter(
@@ -515,6 +539,17 @@ class FragranceService:
             self.db.commit()
         except Exception:  # noqa: BLE001
             logger.exception("Failed to mark session as error")
+
+    def _restore_task_completed(self, task: AnalysisTask) -> None:
+        """生成/重新生成失败时把 task 从 processing 恢复成 completed，
+        否则任务会永远卡在「调香推荐中」，用户无法重试。"""
+        try:
+            task.status = "completed"
+            task.current_step = "分析完成"
+            task.progress = 100
+            self.db.commit()
+        except Exception:  # noqa: BLE001
+            logger.exception("Failed to restore task status to completed")
 
     @staticmethod
     def _merge_plans(

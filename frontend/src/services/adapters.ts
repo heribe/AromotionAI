@@ -204,8 +204,8 @@ interface DimensionMeta {
 }
 
 const DIMENSION_ORDER: DimensionMeta[] = [
-  { id: 'climate', name: '气候-消费带', icon: '🌡️' },
   { id: 'consumption', name: '香氛消费推断', icon: '💰' },
+  { id: 'climate', name: '气候-消费带', icon: '🌡️' },
   { id: 'fashion', name: '穿搭风格-香调映射', icon: '👗' },
   { id: 'lifestyle', name: '生活方式-用香场景', icon: '🎯' },
 ];
@@ -329,7 +329,7 @@ export function toProfileReport(data: BackendAnalysisReportData): ProfileReport 
 
   const dimensions: Dimension[] = [];
   // 按固定维度顺序构建
-  const orderedKeys = ['climate_consumption', 'fragrance_consumption', 'fashion_fragrance_map', 'lifestyle_scenario'];
+  const orderedKeys = ['fragrance_consumption', 'climate_consumption', 'fashion_fragrance_map', 'lifestyle_scenario'];
   for (const dimKey of orderedKeys) {
     const dim = buildDimension(dimKey, report[dimKey] as Record<string, unknown>);
     if (dim) dimensions.push(dim);
