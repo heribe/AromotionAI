@@ -174,6 +174,19 @@ class AnalysisService:
             # 调用 collector 获取博主 profile 与 帖子列表
             blogger = await collector.get_blogger_profile(task.blogger_url, task_id=task_id)
 
+            sub_steps.set_completed("博主资料")
+            await self.task_manager.emit(
+                task_id,
+                "step_complete",
+                {
+                    "step": "博主资料",
+                    "summary": f"采集成功: {blogger.nickname}, 粉丝数 {blogger.follower_count}",
+                },
+            )
+
+            # 帖子列表采集（与博主资料属同一采集阶段，单独标记子步骤）
+            await emit_progress("collecting", 10, "正在采集帖子列表", active_sub="帖子列表")
+
             post_selection = config.get("post_selection", {})
             top_n = post_selection.get("top_n") or post_selection.get("top_count") or 5
             recent_n = post_selection.get("recent_n") or post_selection.get("recent_count") or 5
@@ -194,14 +207,11 @@ class AnalysisService:
                 self.db.add(post)
             self.db.commit()
 
-            sub_steps.set_completed("博主资料")
+            sub_steps.set_completed("帖子列表")
             await self.task_manager.emit(
                 task_id,
                 "step_complete",
-                {
-                    "step": "博主资料",
-                    "summary": f"采集成功: {blogger.nickname}, 粉丝数 {blogger.follower_count}",
-                },
+                {"step": "帖子列表", "summary": f"采集到 {len(posts)} 条帖子"},
             )
 
             # Step 2: 媒体下载与预处理 (10% - 30%)

@@ -1,0 +1,18 @@
+# 不拷入后端镜像的文件
+# 本地虚拟环境（镜像内重新 uv sync）
+.venv/
+# 运行时数据（由 compose 卷挂载，不进镜像）
+data/
+# 敏感配置（环境变量由 compose 注入）
+.env
+.env.*
+!.env.example
+# Python 缓存
+__pycache__/
+*.pyc
+.pytest_cache/
+# 测试（生产镜像不需要）
+tests/
+# 本地运行日志
+*.log
+backend_run.log

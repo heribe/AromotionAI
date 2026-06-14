@@ -77,6 +77,7 @@ class AnalysisListItem(BaseModel):
     created_at: datetime.datetime
     completed_at: Optional[datetime.datetime] = None
     has_fragrance_session: bool = False
+    session_id: Optional[str] = None  # 关联的香调 session id（无则 None）
 
 
 class AnalysisListData(BaseModel):

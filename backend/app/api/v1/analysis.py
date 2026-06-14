@@ -134,6 +134,7 @@ async def list_tasks(
                 created_at=t.created_at,
                 completed_at=t.completed_at,
                 has_fragrance_session=task_service.has_fragrance_session(t.id),
+                session_id=task_service.get_fragrance_session_id(t.id),
             )
         )
 

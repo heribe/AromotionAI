@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from 'react';
-import { Card, Typography, Row, Col, Statistic, Table, Button, Input, Radio, Space, Modal, Tag, Progress } from 'antd';
+import React, { useEffect, useState, useRef } from 'react';
+import { Card, Typography, Row, Col, Statistic, Table, Button, Input, Radio, Space, Modal, Tag, Progress, message, notification } from 'antd';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search, CheckCircle2 } from 'lucide-react';
 import { useAnalysisStore } from '../../stores/useAnalysisStore';
 import type { AnalysisTask } from '../../types/analysis';
+import { ApiError } from '../../services/http';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -20,25 +21,84 @@ const statusConfig: Record<string, { color: string; label: string }> = {
 
 export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
-  const { taskList, taskListLoading, fetchTaskList } = useAnalysisStore();
+  const { taskList, taskListLoading, fetchTaskList, createTask, creating } = useAnalysisStore();
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [bloggerUrl, setBloggerUrl] = useState('');
   const [analysisLevel, setAnalysisLevel] = useState('标准');
+  const pollTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  // 记录已通知过「完成」的 taskId，避免重复弹窗
+  const notifiedCompleted = useRef<Set<string> | null>(null);
 
   useEffect(() => {
     fetchTaskList();
-    
-    /* =========================================================================
-     * [TODO] 接入真实后端时的替换逻辑（首页轮询）：
-     * =========================================================================
-     * Dashboard 需要实时反映进度，所以需要开启轮询：
-     * const timer = setInterval(() => {
-     *   fetchTaskList();
-     * }, 10000); // 比如每10秒查一次
-     * return () => clearInterval(timer);
-     * =========================================================================
-     */
+
+    // 有进行中任务时开启轮询，实时反映进度变化
+    pollTimer.current = setInterval(() => {
+      fetchTaskList();
+    }, 5000);
+    return () => {
+      if (pollTimer.current) clearInterval(pollTimer.current);
+    };
   }, [fetchTaskList]);
+
+  // 检测任务完成：首次加载的历史 completed 任务不弹，只弹「运行中 → completed」的增量
+  useEffect(() => {
+    if (notifiedCompleted.current === null) {
+      // 首次：把当前所有已完成任务记下，不弹
+      notifiedCompleted.current = new Set(
+        taskList.filter(t => t.status === 'completed').map(t => t.taskId),
+      );
+      return;
+    }
+    taskList.forEach(t => {
+      if (t.status === 'completed' && !notifiedCompleted.current!.has(t.taskId)) {
+        notifiedCompleted.current!.add(t.taskId);
+        const key = `done-${t.taskId}`;
+        notification.open({
+          key,
+          duration: 0, // 不自动消失，等用户处理
+          icon: <CheckCircle2 size={22} color="var(--accent-moss)" />,
+          style: {
+            borderRadius: 2,
+            border: '1px solid var(--border-line)',
+            boxShadow: '0 6px 24px rgba(47, 54, 48, 0.08)',
+          },
+          message: (
+            <span style={{ fontFamily: 'var(--font-serif)', color: 'var(--accent-moss)', fontWeight: 500 }}>
+              画像分析完成
+            </span>
+          ),
+          description: (
+            <span style={{ color: 'var(--text-secondary)', fontSize: 13 }}>
+              「{t.bloggerName}」的受众画像已生成，点击查看完整报告。
+            </span>
+          ),
+          btn: (
+            <Space>
+              <Button
+                size="small"
+                onClick={() => notification.destroy(key)}
+                style={{ borderRadius: 2, borderColor: 'var(--border-line)', color: 'var(--text-secondary)' }}
+              >
+                稍后
+              </Button>
+              <Button
+                size="small"
+                type="primary"
+                className="btn-amber-primary"
+                onClick={() => {
+                  notification.destroy(key);
+                  navigate(`/report/${t.taskId}`);
+                }}
+              >
+                查看画像
+              </Button>
+            </Space>
+          ),
+        });
+      }
+    });
+  }, [taskList, navigate]);
 
   // 按状态分类
   const runningTasks = taskList.filter(t => ['pending', 'collecting', 'analyzing', 'waiting_tags', 'processing'].includes(t.status));
@@ -52,21 +112,32 @@ export const Dashboard: React.FC = () => {
     runningCount: runningTasks.length,
   };
 
+  /** 进入调配室：有 session 直接进，否则引导先去标签页生成 */
+  const enterLab = (task: AnalysisTask) => {
+    if (task.sessionId) {
+      navigate(`/recommend/${task.sessionId}`);
+    } else {
+      message.info('该任务尚未生成香调方案，请先前往标签筛选生成');
+      navigate(`/tags/${task.taskId}`);
+    }
+  };
+
   const handleCreateTask = async () => {
-    /* =========================================================================
-     * [TODO] 接入真实后端时的替换逻辑（新建分析）：
-     * =========================================================================
-     * 1. 提取输入框的数据调用真实 API:
-     *    await backendApi.createTask(bloggerUrl, analysisLevel);
-     * 2. 调用成功后刷新列表:
-     *    fetchTaskList();
-     * =========================================================================
-     */
-     
-    // Mock: 直接关闭并刷新
-    setCreateModalOpen(false);
-    setBloggerUrl('');
-    fetchTaskList();
+    if (!bloggerUrl.trim()) {
+      message.warning('请填写博主链接');
+      return;
+    }
+    try {
+      const { taskId } = await createTask(bloggerUrl.trim(), analysisLevel);
+      setCreateModalOpen(false);
+      setBloggerUrl('');
+      message.success('任务已创建，开始分析');
+      // 跳转进度页，实时查看采集/分析过程
+      navigate(`/task/${taskId}`);
+    } catch (e) {
+      const msg = e instanceof ApiError ? e.message : '创建任务失败';
+      message.error(msg);
+    }
   };
 
   const columns = [
@@ -120,7 +191,7 @@ export const Dashboard: React.FC = () => {
               <Button
                 type="link"
                 style={{ color: 'var(--accent-moss)', padding: 0, height: 'auto' }}
-                onClick={() => navigate(`/recommend/${record.taskId}`)}
+                onClick={() => enterLab(record)}
               >
                 进入调配室
               </Button>
@@ -246,7 +317,7 @@ export const Dashboard: React.FC = () => {
                         className="btn-amber-primary"
                         size="small"
                         style={{ fontSize: 12 }}
-                        onClick={() => navigate(`/recommend/${task.taskId}`)}
+                        onClick={() => enterLab(task)}
                       >
                         进入调配室
                       </Button>
@@ -292,9 +363,11 @@ export const Dashboard: React.FC = () => {
         open={createModalOpen}
         onOk={handleCreateTask}
         onCancel={() => setCreateModalOpen(false)}
-        okText="开始分析"
+        okText={creating ? '创建中…' : '开始分析'}
         cancelText="取消"
-        okButtonProps={{ className: 'btn-amber-primary' }}
+        okButtonProps={{ className: 'btn-amber-primary', loading: creating }}
+        cancelButtonProps={{ disabled: creating }}
+        maskClosable={!creating}
       >
         <Paragraph style={{ color: 'var(--text-secondary)' }}>
           将对以下博主进行 <Text strong style={{ color: 'var(--accent-amber)' }}>{analysisLevel}</Text> 级别的受众画像分析：

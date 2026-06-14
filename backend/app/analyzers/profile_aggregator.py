@@ -25,7 +25,7 @@ def get_val(obj, key, default=None):
 DEFAULT_FALLBACK = {
     "climate_consumption": {
         "climate_zone": {"湿热南方": 0.0, "干燥北方": 0.0, "四季分明": 0.0},
-        "city_tier": {"一线/新一线": 0.0, "二线": 0.0, "三线及以下": 0.0},
+        "city_tier": {"未知": 0.0},
         "culture_circle": {"日韩影响圈": 0.0, "内陆文化圈": 0.0, "港台风影响圈": 0.0},
         "concentration": "暂无数据",
         "summary": "暂无气候-消费带分析摘要"
@@ -71,56 +71,54 @@ class ProfileAggregator(BaseAnalyzer):
         输入所有原始分析结果，输出四维度标签报告
         """
         # 1. 地域与气候带初步统计（规则引擎防呆）
+        # 抖音评论 API 的 ip_label 只返回省级，无城市数据。因此 city_tier
+        # 实际统计的是「省域分布」（按 province 计数），不再推断城市线级。
         climate_counts = {"湿热南方": 0, "干燥北方": 0, "四季分明": 0, "其他地区": 0}
-        city_counts = {"一线/新一线": 0, "二线": 0, "三线及以下": 0}
+        region_counts: dict[str, int] = {}  # 省份 → 粉丝数
         total_valid = 0
 
-        # 一线/新一线城市列表
-        tier_1_new_1 = ["北京", "上海", "广州", "深圳", "成都", "杭州", "重庆", "武汉", "西安", "苏州", "天津", "南京", "长沙", "郑州", "东莞"]
-        # 常见二线城市列表
-        tier_2 = [
-            "昆明", "厦门", "合肥", "佛山", "福州", "哈尔滨", "济南", "温州", "宁波", "南昌", "长春", "大连", "贵阳", "南宁",
-            "石家庄", "太原", "泉州", "无锡", "常州", "绍兴", "嘉兴", "南通", "台州", "珠海", "中山", "金华", "烟台", "潍坊",
-            "徐州", "兰州", "西宁", "银川", "乌鲁木齐", "海口", "拉萨", "呼和浩特"
-        ]
+        # 气候带归类的省份集合
+        CLIMATE_HOT_SOUTH = {"广东", "福建", "广西", "海南", "云南"}
+        CLIMATE_DRY_NORTH = {"北京", "天津", "河北", "山东", "辽宁", "吉林", "黑龙江", "内蒙古"}
+        CLIMATE_FOUR_SEASON = {"上海", "江苏", "浙江", "安徽", "江西", "湖北", "湖南"}
 
         for commenter in (commenter_profiles or []):
             prov = clean_name(get_val(commenter, "province"))
             city = clean_name(get_val(commenter, "city"))
 
-            if not prov and not city:
+            # 优先用省份（ip_label 提供），无省份才退而用城市
+            region_key = prov or city
+            if not region_key:
                 continue
 
             total_valid += 1
+            region_counts[region_key] = region_counts.get(region_key, 0) + 1
 
-            # 气候带归类规则
-            if any(p in prov for p in ["广东", "福建", "广西", "海南", "云南"]):
+            # 气候带归类规则（按省份）
+            if any(p in prov for p in CLIMATE_HOT_SOUTH):
                 climate_counts["湿热南方"] += 1
-            elif any(p in prov for p in ["北京", "天津", "河北", "山东", "辽宁", "吉林", "黑龙江", "内蒙古"]):
+            elif any(p in prov for p in CLIMATE_DRY_NORTH):
                 climate_counts["干燥北方"] += 1
-            elif any(p in prov for p in ["上海", "江苏", "浙江", "安徽", "江西", "湖北", "湖南"]):
+            elif any(p in prov for p in CLIMATE_FOUR_SEASON):
                 climate_counts["四季分明"] += 1
             else:
                 climate_counts["其他地区"] += 1
 
-            # 城市线级归类规则
-            if city in tier_1_new_1 or prov in tier_1_new_1:
-                city_counts["一线/新一线"] += 1
-            elif city in tier_2 or prov in tier_2:
-                city_counts["二线"] += 1
-            else:
-                city_counts["三线及以下"] += 1
-
         climate_percentages = {}
-        city_percentages = {}
+        # 省域分布：取 Top5，其余合并为「其他」
+        region_percentages: dict[str, float] = {}
         if total_valid > 0:
             for k, v in climate_counts.items():
                 climate_percentages[k] = round((v / total_valid) * 100, 1)
-            for k, v in city_counts.items():
-                city_percentages[k] = round((v / total_valid) * 100, 1)
+            sorted_regions = sorted(region_counts.items(), key=lambda kv: kv[1], reverse=True)
+            for name, cnt in sorted_regions[:5]:
+                region_percentages[name] = round((cnt / total_valid) * 100, 1)
+            others = sum(c for _, c in sorted_regions[5:])
+            if others > 0:
+                region_percentages["其他"] = round((others / total_valid) * 100, 1)
         else:
             climate_percentages = {"湿热南方": 0.0, "干燥北方": 0.0, "四季分明": 0.0, "其他地区": 0.0}
-            city_percentages = {"一线/新一线": 0.0, "二线": 0.0, "三线及以下": 0.0}
+            region_percentages = {"未知": 0.0}
 
         # 2. 构造 AI 提示词
         blogger_info = {
@@ -147,15 +145,16 @@ class ProfileAggregator(BaseAnalyzer):
             f"**粉丝视觉分析（穿搭、消费水平等）**:\n{json.dumps(fan_visual_analysis, ensure_ascii=False, indent=2)}\n\n"
             f"**粉丝地域与气候分布（基于规则引擎初步统计）**:\n"
             f"- 气候带比例: {json.dumps(climate_percentages, ensure_ascii=False)}\n"
-            f"- 城市线级比例: {json.dumps(city_percentages, ensure_ascii=False)}\n\n"
+            f"- 省域分布比例: {json.dumps(region_percentages, ensure_ascii=False)}\n\n"
             "### 2. 输出格式要求\n"
             "你必须严格遵循以下 JSON 格式返回分析结果。不要包含除 Markdown json 代码块之外的任何说明文字。\n"
-            "注意：所有的子维度比率（如 climate_zone、city_tier 等）必须是包含特定键的字典，键的百分比值应为数字（0到100之间，各分类总和建议约等于100）。\n\n"
+            "注意：所有的子维度比率（如 climate_zone、city_tier 等）必须是包含特定键的字典，键的百分比值应为数字（0到100之间，各分类总和建议约等于100）。\n"
+            "city_tier 字段为粉丝的「省域分布」（抖音 IP 仅提供省级，无城市数据），键为省份名，值按上述统计的省域分布比例填写。\n\n"
             "```json\n"
             "{\n"
             '  "climate_consumption": {\n'
             '    "climate_zone": {"湿热南方": 42.0, "干燥北方": 28.0, "四季分明": 30.0},\n'
-            '    "city_tier": {"一线/新一线": 35.0, "二线": 40.0, "三线及以下": 25.0},\n'
+            '    "city_tier": {"广东": 40.0, "四川": 15.0, "其他": 45.0},\n'
             '    "culture_circle": {"日韩影响圈": 27.0, "内陆文化圈": 45.0, "港台风影响圈": 28.0},\n'
             '    "concentration": "全国分散型（无区域>15%）",\n'
             '    "summary": "关于气候-消费带的总结描述"\n'
@@ -191,9 +190,9 @@ class ProfileAggregator(BaseAnalyzer):
         mock_success_json = {
             "climate_consumption": {
                 "climate_zone": {"湿热南方": 42.0, "干燥北方": 28.0, "四季分明": 30.0},
-                "city_tier": {"一线/新一线": 35.0, "二线": 40.0, "三线及以下": 25.0},
+                "city_tier": {"广东": 40.0, "四川": 15.0, "其他": 45.0},
                 "culture_circle": {"日韩影响圈": 27.0, "内陆文化圈": 45.0, "港台风影响圈": 28.0},
-                "concentration": "全国分散型（无区域>15%）",
+                "concentration": "南方及下沉市场集中型",
                 "summary": "粉丝分布全国，以内陆文化圈为主，受到日韩影响和港台风圈的交织作用。"
             },
             "fragrance_consumption": {

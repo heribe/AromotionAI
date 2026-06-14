@@ -5,29 +5,45 @@ import type {
   ChatMessage,
   NoteChangeAnimation
 } from '../types/fragrance';
-import { mockFragranceApi } from '../services/mockFragranceData';
 import { message } from 'antd';
+import {
+  getSession,
+  getHistory,
+  generateFragrance,
+  chat as apiChat,
+  type FragranceGenerateResult,
+} from '../services/api';
+import { ApiError } from '../services/http';
 
 interface FragranceState {
   // Session 数据
   sessionId: string | null;
   taskId: string | null;
   selectedTags: Record<string, Record<string, string[]>> | null;
-  
+
   // 推荐方案
   plans: FragrancePlan[];
   icebergAnalysis: IcebergAnalysis | null;
   isLoading: boolean;
-  
+
   // 对话
   messages: ChatMessage[];
   isSending: boolean;
-  
+
   // 变更动画
   changeAnimation: NoteChangeAnimation | null;
-  
+
   // Actions
+  /** 初始化已有会话：sessionId 已知，从后端拉取（切回/直接进入调配室） */
   initSession: (sessionId: string) => Promise<void>;
+  /** 生成并加载：标签页点「生成」跳来，进入「生成中」动画，后台调 generate，完成后填充 */
+  generateAndLoad: (
+    taskId: string,
+    selectedTags: Record<string, Record<string, string[]>>,
+    onSessionReady?: (sessionId: string) => void,
+  ) => Promise<void>;
+  /** 直接用生成结果填充 */
+  hydrateFromResult: (result: FragranceGenerateResult) => void;
   sendMessage: (text: string) => Promise<void>;
   clearChangeAnimation: () => void;
 }
@@ -39,67 +55,89 @@ export const useFragranceStore = create<FragranceState>((set, get) => ({
   plans: [],
   icebergAnalysis: null,
   isLoading: false,
-  
+
   messages: [],
   isSending: false,
-  
+
   changeAnimation: null,
-  
+
   initSession: async (sessionId: string) => {
-    set({ isLoading: true });
+    // 已有会话：从后端拉取 session + 历史
+    set({ isLoading: true, sessionId });
     try {
       const [sessionData, historyData] = await Promise.all([
-        mockFragranceApi.getSession(sessionId),
-        mockFragranceApi.getHistory(sessionId)
+        getSession(sessionId),
+        getHistory(sessionId),
       ]);
-      
-      /* =========================================================================
-       * [TODO] 接入真实后端时的替换逻辑：
-       * =========================================================================
-       * 1. 判断 sessionData.status:
-       * 
-       * if (sessionData.status === 'completed') {
-       *   // 场景A: 切出后切回 (早已完成)
-       *   // 直接放入全部数据，设置 isLoading: false
-       *   // 视图层会在极短时间内(0.5s)结束 loading 动画，瞬间触发阶梯入场。
-       *   set({ plans: ..., icebergAnalysis: ..., isLoading: false });
-       * } else {
-       *   // 场景B: 真实生成中 (全程驻留)
-       *   // 保持 isLoading: true，存入基础信息(taskId, selectedTags)，让视图显示萃取动画。
-       *   // 然后开启 setInterval 轮询 getSession 接口。
-       *   // 当查到 status === 'completed' 时，再 set({ plans, isLoading: false }) 并 clearInterval。
-       * }
-       * ========================================================================= 
-       */
-
-      // 第一阶段：立刻拥有 sessionId, taskId, selectedTags，但处于 loading
       set({
-        sessionId,
+        sessionId: sessionData.sessionId,
         taskId: sessionData.taskId,
         selectedTags: sessionData.selectedTags,
-        // 清空之前的数据
-        plans: [],
-        icebergAnalysis: null,
-        messages: [],
+        plans: sessionData.recommendations,
+        icebergAnalysis: sessionData.icebergAnalysis,
+        messages: historyData,
+        isLoading: false,
       });
-
-      // 第二阶段：模拟大模型生成的 5 秒延迟 (真实后端接入后替换为上述轮询逻辑)
-      setTimeout(() => {
-        set({
-          plans: sessionData.recommendations,
-          icebergAnalysis: sessionData.icebergAnalysis,
-          messages: historyData.messages,
-          isLoading: false
-        });
-      }, 5000);
-
     } catch (err) {
       console.error(err);
-      message.error('加载会话失败');
+      const msg = err instanceof ApiError ? err.message : '加载会话失败';
+      message.error(msg);
       set({ isLoading: false });
     }
   },
-  
+
+  generateAndLoad: async (
+    taskId,
+    selectedTags,
+    onSessionReady,
+  ) => {
+    // 进入「生成中」动画态：保留 loading=true，清空旧方案
+    set({
+      isLoading: true,
+      taskId,
+      selectedTags,
+      plans: [],
+      icebergAnalysis: null,
+      messages: [],
+      sessionId: null,
+    });
+    try {
+      const result = await generateFragrance(taskId, selectedTags, { planCount: 3 });
+      // 填充方案
+      set({
+        sessionId: result.sessionId,
+        plans: result.recommendations,
+        icebergAnalysis: result.icebergAnalysis,
+        isLoading: false,
+      });
+      // 拉取初始 assistant 消息
+      try {
+        const history = await getHistory(result.sessionId);
+        set({ messages: history });
+      } catch {
+        /* 历史拉取失败不阻塞 */
+      }
+      onSessionReady?.(result.sessionId);
+    } catch (err) {
+      console.error(err);
+      const msg = err instanceof ApiError ? err.message : '生成香调方案失败';
+      message.error(msg);
+      set({ isLoading: false });
+    }
+  },
+
+  hydrateFromResult: (result) => {
+    set({
+      sessionId: result.sessionId,
+      taskId: result.taskId ?? null,
+      selectedTags: null,
+      plans: result.recommendations,
+      icebergAnalysis: result.icebergAnalysis,
+      messages: [],
+      isLoading: false,
+    });
+  },
+
   sendMessage: async (text: string) => {
     const { sessionId, messages } = get();
     if (!sessionId || !text.trim()) return;
@@ -115,20 +153,9 @@ export const useFragranceStore = create<FragranceState>((set, get) => ({
     set({ messages: [...messages, userMsg], isSending: true });
 
     try {
-      /* =========================================================================
-       * [TODO] 接入真实后端时的替换逻辑（流式对话与配方更新）：
-       * =========================================================================
-       * 1. 替换 mockFragranceApi.chat 为真正的 SSE / WebSocket 或 Fetch 流式调用。
-       * 2. 如果是流式响应（SSE）：
-       *    - 需要在本地维护一个临时的 assistantMsg，每收到一个 chunk 就拼接 content 并更新 messages 数组。
-       * 3. 流结束时，如果后端返回了 updatedPlans：
-       *    - 执行下方的计划替换逻辑，并设置 changeAnimation 触发卡片高亮与香材[NEW]动效。
-       * =========================================================================
-       */
-      
-      // 2. 调用 Mock API
-      const response = await mockFragranceApi.chat(sessionId, text);
-      
+      // 2. 调真实后端 chat
+      const response = await apiChat(sessionId, text);
+
       // 3. 处理 Assistant 回复
       const astMsg: ChatMessage = {
         id: response.messageId,
@@ -137,21 +164,22 @@ export const useFragranceStore = create<FragranceState>((set, get) => ({
         updatedPlans: response.updatedPlans,
         createdAt: new Date().toISOString()
       };
-      
+
       // 4. 如果有方案更新，替换当前 plans 并触发动画
       if (response.updatedPlans && response.updatedPlans.length > 0) {
         const newPlans = [...get().plans];
         const changedNoteNames: string[] = [];
-        
+
         response.updatedPlans.forEach(updatedPlan => {
           const idx = newPlans.findIndex(p => p.planId === updatedPlan.planId);
           if (idx !== -1) {
             newPlans[idx] = updatedPlan;
           }
-          
+
           // 收集所有被标记为 changed: true 的香材名字，用于动画
-          ['topNotes', 'middleNotes', 'baseNotes'].forEach(key => {
-            (updatedPlan as any)[key]?.forEach((note: any) => {
+          const noteGroups = [updatedPlan.topNotes, updatedPlan.middleNotes, updatedPlan.baseNotes];
+          noteGroups.forEach(notes => {
+            notes.forEach(note => {
               if (note.changed) changedNoteNames.push(note.name);
             });
           });
@@ -165,23 +193,24 @@ export const useFragranceStore = create<FragranceState>((set, get) => ({
             timestamp: Date.now()
           }
         });
-        
+
         // 3秒后自动清除动画状态
         setTimeout(() => {
           get().clearChangeAnimation();
         }, 3000);
       }
-      
+
       // 更新消息列表
       set(state => ({ messages: [...state.messages, astMsg] }));
 
     } catch (err) {
       console.error(err);
-      message.error('发送失败，请重试');
+      const msg = err instanceof ApiError ? err.message : '发送失败，请重试';
+      message.error(msg);
     } finally {
       set({ isSending: false });
     }
   },
-  
+
   clearChangeAnimation: () => set({ changeAnimation: null })
 }));

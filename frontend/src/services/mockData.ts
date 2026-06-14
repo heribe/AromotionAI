@@ -10,6 +10,7 @@ import type {
   AnalysisTask,
   ProfileReport,
   TagDimension,
+  CreateAnalysisRequest,
 } from '../types/analysis';
 
 // ========== 延迟模拟 ==========
@@ -532,10 +533,9 @@ export const mockApi = {
   },
 
   /** 创建分析任务 */
-  async createTask(bloggerUrl: string, level: string): Promise<{ taskId: string }> {
+  async createTask(req: CreateAnalysisRequest): Promise<{ taskId: string }> {
     await delay(800);
-    void bloggerUrl;
-    void level;
+    void req;
     return { taskId: 'task-new-' + Date.now() };
   },
 };

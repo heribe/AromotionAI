@@ -1,0 +1,15 @@
+# 不拷入前端构建镜像的文件
+# 本地依赖（镜像内 npm ci 重装）
+node_modules/
+# 本地构建产物（镜像内重新 build）
+dist/
+# 开发环境配置（生产构建读 .env.production，不要带 dev 配置）
+.env.development
+.env.local
+# 本地运行日志
+*.log
+frontend_run.log
+# 编辑器/系统
+.vscode/
+.idea/
+.DS_Store

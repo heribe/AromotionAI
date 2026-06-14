@@ -10,13 +10,13 @@ const { Title, Text, Paragraph } = Typography;
 export const TagSelection: React.FC = () => {
   const { taskId } = useParams<{ taskId: string }>();
   const navigate = useNavigate();
-  const { 
-    tagDimensions, 
-    tagSelections, 
-    tagsLoading, 
-    fetchTags, 
-    toggleTag, 
-    getSelectedTags 
+  const {
+    tagDimensions,
+    tagSelections,
+    tagsLoading,
+    fetchTags,
+    toggleTag,
+    getSelectedTags
   } = useAnalysisStore();
 
   useEffect(() => {
@@ -39,26 +39,34 @@ export const TagSelection: React.FC = () => {
     allSelectedTagsList.push(...item.tags);
   });
 
-  const handleGenerate = async () => {
+  const handleGenerate = () => {
     if (allSelectedTagsList.length === 0) {
       message.warning('请至少保留一个标签用于生成推荐！');
       return;
     }
-    
-    /* =========================================================================
-     * [TODO] 接入真实后端时的替换逻辑：
-     * =========================================================================
-     * 1. 整理好选中的标签，调用真实后端接口（如 POST /api/v1/fragrance/generate）
-     *    const res = await backendApi.submitTags(taskId, getSelectedTags());
-     * 2. 调用成功后，后端任务状态可能变为 processing，拿到 sessionId
-     *    const newSessionId = res.sessionId || taskId;
-     * 3. 跳转到调配室页面：
-     *    navigate(`/recommend/${newSessionId}`);
-     * =========================================================================
-     */
-     
-    // 当前 Mock 环境下直接写死跳转
-    navigate('/recommend');
+    if (!taskId) return;
+
+    // 组装后端要求的三层嵌套 {dim_id: {sub_id: [tag_name]}}
+    // tagSelections 是 subId → [tags]，需要反查每个 subId 所属的 dimensionId
+    const subToDim: Record<string, string> = {};
+    tagDimensions.forEach(dim => {
+      dim.subDimensions.forEach(sub => {
+        subToDim[sub.subId] = dim.dimensionId;
+      });
+    });
+    const selectedTagsNested: Record<string, Record<string, string[]>> = {};
+    getSelectedTags().forEach(({ subId, tags }) => {
+      const dimId = subToDim[subId];
+      if (!dimId || tags.length === 0) return;
+      if (!selectedTagsNested[dimId]) selectedTagsNested[dimId] = {};
+      selectedTagsNested[dimId][subId] = tags;
+    });
+
+    // 立即跳转调配室，通过 router state 携带待生成的参数。
+    // 调配室收到后进入「生成中」动画，后台调 generateFragrance，完成后填充方案。
+    navigate(`/recommend/pending`, {
+      state: { pendingGenerate: { taskId, selectedTags: selectedTagsNested } },
+    });
   };
 
   /** 渲染单个子维度的标签组 */

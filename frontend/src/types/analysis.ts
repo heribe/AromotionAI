@@ -4,7 +4,7 @@
  */
 
 // ========== 任务相关 ==========
-export type TaskStatus = 'pending' | 'collecting' | 'analyzing' | 'waiting_tags' | 'processing' | 'completed' | 'failed';
+export type TaskStatus = 'pending' | 'collecting' | 'analyzing' | 'waiting_tags' | 'processing' | 'completed' | 'failed' | 'cancelled';
 
 export interface AnalysisTask {
   taskId: string;
@@ -18,6 +18,7 @@ export interface AnalysisTask {
   createdAt: string;
   completedAt?: string;
   errorMessage?: string;
+  sessionId?: string | null;   // 关联的香调 session id（有则可直接进调配室）
 }
 
 // ========== 画像报告相关 ==========

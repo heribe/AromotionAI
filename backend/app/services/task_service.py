@@ -240,6 +240,16 @@ class TaskService:
             > 0
         )
 
+    def get_fragrance_session_id(self, task_id: str) -> Optional[str]:
+        """返回该 task 关联的香调 session id（取最新一个），无则 None。"""
+        session = (
+            self.db.query(FragranceSession)
+            .filter(FragranceSession.task_id == task_id)
+            .order_by(desc(FragranceSession.created_at))
+            .first()
+        )
+        return session.id if session else None
+
     def get_blogger_info(self, task_id: str) -> Optional[BloggerProfile]:
         return (
             self.db.query(BloggerProfile)

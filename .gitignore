@@ -230,3 +230,6 @@ CLAUDE.md
 others
 backend/data/
 cookies.json
+
+# 部署运行时数据（docker-compose 挂载卷，含 SQLite/media/cookie）
+/data/

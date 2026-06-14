@@ -1,0 +1,57 @@
+# AromotionAI 单机部署
+# 用法：
+#   1. 在本目录建 .env 填 GLM_API_KEY（见 .env.example）
+#   2. 把抖音 cookie 放到 ./data/backend/cookies/douyin.json
+#   3. docker compose up -d --build
+#   4. 访问 http://<服务器IP>
+#
+# 数据持久化：./data/backend 挂载到容器，容器重建数据不丢。
+
+services:
+  # ---------- 后端 ----------
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: aromotion-backend
+    restart: unless-stopped
+    environment:
+      # 从宿主机 .env 读取（compose 自动注入同目录 .env）
+      GLM_API_KEY: ${GLM_API_KEY}
+      ZHIPUAI_BASE_URL: ${ZHIPUAI_BASE_URL:-https://open.bigmodel.cn/api/coding/paas/v4}
+      GLM_MODEL: ${GLM_MODEL:-glm-5.2}
+      GLM_VISION_MODEL: ${GLM_VISION_MODEL:-glm-4.6v}
+      APP_ENV: production
+      # 生产同源（前端经 nginx 反代），CORS 实际不生效，保留以防直连后端
+      CORS_ORIGINS: ${CORS_ORIGINS:-}
+      DATABASE_URL: sqlite:///./data/db/aromotion.db
+      COOKIE_DIR: ./data/cookies
+      STORAGE_LOCAL_PATH: ./data/media
+      # Playwright 在容器内运行需要（无头模式）
+      PLAYWRIGHT_BROWSERS_PATH: /ms-playwright
+    volumes:
+      - ./data/backend/db:/app/data/db
+      - ./data/backend/media:/app/data/media
+      - ./data/backend/cookies:/app/data/cookies
+    # 后端不对外暴露端口，只供 frontend 容器通过内部网络访问
+    expose:
+      - "8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  # ---------- 前端（nginx：静态托管 + 反代后端）----------
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: aromotion-frontend
+    restart: unless-stopped
+    ports:
+      # 对外暴露 80（生产可加 443 + HTTPS）
+      - "80:80"
+    depends_on:
+      - backend
