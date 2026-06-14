@@ -11,28 +11,38 @@ from app.platforms.douyin.collector import DouyinCollector
 
 def test_preprocess_image_decompression_bomb(tmp_path):
     """
-    测试当图片尺寸大于 PIL 的 DecompressionBomb 阈值 (默认约 89M 像素) 时的表现。
-    生成的 10000x10000 图片像素数为 1亿，触发 DecompressionBombError。
-    系统应该在 except 块中捕获它并抛出相应的 RuntimeError。
+    测试当图片尺寸超过 PIL 的 DecompressionBomb error 阈值时的表现。
+
+    PIL 的 DecompressionBomb 机制分两级：
+      - width*height > MAX_IMAGE_PIXELS         -> 仅发 DecompressionBombWarning
+      - width*height > 2 * MAX_IMAGE_PIXELS     -> 抛 DecompressionBombError
+    要稳定触发 Error，像素总数必须严格大于 2 * MAX_IMAGE_PIXELS。
+    本测试把 MAX_IMAGE_PIXELS 调到 100，并用 300x300=90000 像素图片，
+    90000 远大于 2*100=200，确保抛出 DecompressionBombError。
+
+    preprocess_image 在 Image.open 失败时，对非 heic/webp/avif 格式（如 jpg）
+    且无 ffmpeg 的场景会抛 RuntimeError("Unsupported or corrupted image format")，
+    测试断言该异常文案。
     """
     mp = MediaProcessor(test_mode="prod")
     img_path = str(tmp_path / "bomb.jpg")
-    
-    # 临时调低 MAX_IMAGE_PIXELS 以便在测试中轻松触发 bomb 错误而不需要耗费大量内存
-    # 比如设置为 10000 像素
+
     import PIL.Image
     original_max = PIL.Image.MAX_IMAGE_PIXELS
-    PIL.Image.MAX_IMAGE_PIXELS = 10000
-    
+    PIL.Image.MAX_IMAGE_PIXELS = 100
+
     try:
-        # 创建一个 200x100 = 20000 像素的图片，它大于 10000 像素限制
-        img = Image.new("RGB", (200, 100), color="blue")
+        # 300x300 = 90000 像素，远大于 2*100=200，稳定触发 DecompressionBombError
+        img = Image.new("RGB", (300, 300), color="blue")
         img.save(img_path)
         img.close()
-        
-        with pytest.raises(RuntimeError) as exc_info:
-            mp.preprocess_image(img_path)
-        assert "Unsupported or corrupted image format" in str(exc_info.value)
+
+        # preprocess_image 在 Image.open 抛异常后，jpg 格式无 ffmpeg 时
+        # 走 else 分支抛 RuntimeError("Unsupported or corrupted image format")
+        with patch.object(mp, "_has_ffmpeg", return_value=False):
+            with pytest.raises(RuntimeError) as exc_info:
+                mp.preprocess_image(img_path)
+            assert "Unsupported or corrupted image format" in str(exc_info.value)
     finally:
         # 恢复原始设置以防止影响其它测试
         PIL.Image.MAX_IMAGE_PIXELS = original_max

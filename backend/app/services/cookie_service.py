@@ -15,6 +15,11 @@ from sqlalchemy.orm import Session
 from app.models.cookie import PlatformCookie
 from app.config import settings
 
+
+def _utcnow() -> datetime.datetime:
+    """Timezone-aware UTC now; replaces deprecated datetime.datetime.utcnow()."""
+    return datetime.datetime.now(datetime.timezone.utc)
+
 class CookieService:
     def _get_cookie_dir(self) -> str:
         cookie_dir = settings.COOKIE_DIR
@@ -70,7 +75,7 @@ class CookieService:
             is_valid = await self.validate_cookie(db, platform)
             if is_valid:
                 cookie.is_valid = True
-                cookie.last_checked_at = datetime.datetime.utcnow()
+                cookie.last_checked_at = _utcnow()
                 db.commit()
                 db.refresh(cookie)
             else:
@@ -96,7 +101,7 @@ class CookieService:
             pass
             
         cookie = db.query(PlatformCookie).filter(PlatformCookie.platform == platform).first()
-        now = datetime.datetime.utcnow()
+        now = _utcnow()
         
         if cookie:
             cookie.cookie_data = cookie_data
