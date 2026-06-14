@@ -1,7 +1,7 @@
 import pytest
 
 @pytest.mark.asyncio
-async def test_f2_create_task_standard(client):
+async def test_f2_create_task_standard(client, upload_douyin_cookie):
     payload = {
         "blogger_url": "https://www.douyin.com/user/MS4wLjABAAA_blogger1",
         "platform": "douyin",
@@ -15,7 +15,7 @@ async def test_f2_create_task_standard(client):
     assert res_data["data"]["status"] == "pending"
 
 @pytest.mark.asyncio
-async def test_f2_create_task_custom(client):
+async def test_f2_create_task_custom(client, upload_douyin_cookie):
     payload = {
         "blogger_url": "https://www.douyin.com/user/MS4wLjABAAA_blogger2",
         "platform": "douyin",
@@ -59,7 +59,7 @@ async def test_f2_create_task_custom(client):
     assert "task_id" in res_data["data"]
 
 @pytest.mark.asyncio
-async def test_f2_create_task_deep_preset(client):
+async def test_f2_create_task_deep_preset(client, upload_douyin_cookie):
     payload = {
         "blogger_url": "https://www.douyin.com/user/MS4wLjABAAA_blogger3",
         "platform": "douyin",
@@ -72,9 +72,9 @@ async def test_f2_create_task_deep_preset(client):
     assert "task_id" in res_data["data"]
 
 @pytest.mark.asyncio
-async def test_f2_parse_url_formats(client):
+async def test_f2_parse_url_formats(client, upload_douyin_cookie):
     urls = [
-        "https://www.douyin.com/user/MS4wLjABAAAA_xyz",
+        "https://www.douyin.com/user/MS4wLjABAAA_xyz",
         "https://v.douyin.com/abcde/",
         "https://iesdouyin.com/share/user/12345"
     ]
@@ -89,7 +89,7 @@ async def test_f2_parse_url_formats(client):
         assert response.json()["code"] == 0
 
 @pytest.mark.asyncio
-async def test_f2_platform_auto_detection(client):
+async def test_f2_platform_auto_detection(client, upload_douyin_cookie):
     # Omit platform or set to auto
     payload = {
         "blogger_url": "https://www.douyin.com/user/MS4wLjABAAA_auto",
