@@ -341,11 +341,22 @@ class DouyinCollector(BaseCollector):
             # 注入 cookie
             cookie_data, _ = await self._get_cookies()
             if cookie_data:
-                await context.add_cookies(cookie_data)
+                # sameSite 只接受 Strict/Lax/None，过滤浏览器导出中的非法值
+                # （如 "unspecified"/"no_restriction"），否则 add_cookies 会抛错。
+                safe_cookies = []
+                for c in cookie_data:
+                    if not isinstance(c, dict):
+                        continue
+                    c = dict(c)  # 浅拷贝，避免污染调用方的原始数据
+                    ss = c.get("sameSite")
+                    if ss not in ("Strict", "Lax", "None"):
+                        c["sameSite"] = "Lax"
+                    safe_cookies.append(c)
+                await context.add_cookies(safe_cookies)
 
             page = await context.new_page()
-            # 导航到抖音以初始化环境
-            await page.goto("https://www.douyin.com/", timeout=10000)
+            # 导航到具体视频页以初始化环境（不要用首页，会因反爬超时）
+            await page.goto(f"https://www.douyin.com/video/{post_id}", timeout=10000)
 
             # 浏览器中直接 fetch api 绕过 X-Bogus 计算
             api_url = f"https://www.douyin.com/aweme/v1/web/comment/list/?device_platform=webapp&aid=6383&aweme_id={post_id}&count={count}&cursor=0"
@@ -405,13 +416,14 @@ class DouyinCollector(BaseCollector):
                 else:
                     raise ValueError(f"HTTP status code: {resp.status_code}")
             except Exception as e2:
+                # curl_cffi 兜底也失败。
+                # prod 模式：抛出聚合异常，保留 Playwright 根因 e（而非被 e2 掩盖）。
                 if self.test_mode != "mock":
-                    raise e2
-            
-            if self.test_mode != "mock":
-                raise e
-
-            # 再次降级到本地 Mock 数据
+                    raise RuntimeError(
+                        f"Comment fetch failed via both channels - "
+                        f"playwright_error={e}, curl_fallback_error={e2}"
+                    ) from e
+                # mock 模式：继续降级到本地 Mock 数据（见下方）。
             raw_comments = self._load_mock_data("comments_list.json")
             if not isinstance(raw_comments, list):
                 raw_comments = []

@@ -28,7 +28,7 @@ class CookieUploadResponse(BaseModel):
 class CookieStatusItem(BaseModel):
     platform: str = Field(..., description="Platform name")
     is_valid: bool = Field(...)
-    uploaded_at: datetime.datetime = Field(...)
+    uploaded_at: datetime.datetime | None = Field(None, description="Upload timestamp; None when not configured")
     last_checked_at: datetime.datetime | None = Field(None)
 
 class CookieStatusResponse(BaseModel):

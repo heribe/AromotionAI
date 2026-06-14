@@ -194,18 +194,31 @@ async def test_collect_comments():
     assert comments[0].aweme_id == "post_123"
 
     collector_prod = DouyinCollector(test_mode="prod")
-    
+
+    # 辅助：构建一个真实模拟 async_playwright() 调用链的 mock 工厂。
+    # 源码调用方式：async_playwright().start() -> playwright_instance；
+    #               playwright_instance.chromium.launch() -> browser；
+    #               browser.new_context() -> context；context.new_page() -> page。
+    # finally 中对称清理：context.close() / browser.close() / playwright_instance.stop()。
+    def build_playwright_mock(page_evaluate_return, launch_side_effect=None):
+        mock_page = AsyncMock()
+        mock_page.evaluate = AsyncMock(return_value=page_evaluate_return)
+        mock_context = AsyncMock()
+        mock_context.new_page = AsyncMock(return_value=mock_page)
+        mock_browser = AsyncMock()
+        mock_browser.new_context = AsyncMock(return_value=mock_context)
+        mock_playwright = MagicMock()
+        mock_playwright.chromium.launch = AsyncMock(
+            return_value=mock_browser,
+            side_effect=launch_side_effect
+        )
+        # playwright_instance.start() 返回 playwright 对象本身
+        mock_playwright.start = AsyncMock(return_value=mock_playwright)
+        mock_playwright.stop = AsyncMock(return_value=None)
+        return mock_playwright
+
     # 1. Playwright Success
-    mock_playwright = MagicMock()
-    mock_browser = AsyncMock()
-    mock_context = AsyncMock()
-    mock_page = AsyncMock()
-    
-    mock_playwright.chromium.launch = AsyncMock(return_value=mock_browser)
-    mock_browser.new_context = AsyncMock(return_value=mock_context)
-    mock_context.new_page = AsyncMock(return_value=mock_page)
-    
-    mock_page.evaluate = AsyncMock(return_value={
+    mock_playwright = build_playwright_mock({
         "comments": [
             {
                 "cid": "c_1",
@@ -216,19 +229,16 @@ async def test_collect_comments():
             }
         ]
     })
-    
-    class MockAsyncPlaywright:
-        async def __aenter__(self):
-            return mock_playwright
-        async def __aexit__(self, exc_type, exc_val, exc_tb):
-            pass
-
-    with patch("playwright.async_api.async_playwright", return_value=MockAsyncPlaywright()):
+    with patch("playwright.async_api.async_playwright", return_value=mock_playwright):
         comments = await collector_prod.collect_comments("post_123", count=1)
         assert len(comments) == 1
         assert comments[0].cid == "c_1"
 
     # 2. Playwright Fail, fallback to curl_cffi Success
+    mock_playwright_fail = build_playwright_mock(
+        page_evaluate_return={},
+        launch_side_effect=Exception("Playwright init error")
+    )
     mock_response = MagicMock()
     mock_response.status_code = 200
     mock_response.json.return_value = {
@@ -242,25 +252,34 @@ async def test_collect_comments():
             }
         ]
     }
-    
+
     mock_sess = MagicMock()
     mock_sess.__aenter__.return_value = mock_sess
     mock_sess.get = AsyncMock(return_value=mock_response)
-    
-    with patch("playwright.async_api.async_playwright", side_effect=Exception("Playwright init error")):
+
+    with patch("playwright.async_api.async_playwright", return_value=mock_playwright_fail):
         with patch("curl_cffi.requests.AsyncSession", return_value=mock_sess):
             comments = await collector_prod.collect_comments("post_123", count=1)
             assert len(comments) == 1
             assert comments[0].cid == "c_curl"
 
-    # 3. Playwright Fail, curl_cffi Fail, should raise exception in prod mode
+    # 3. Playwright Fail, curl_cffi Fail, should raise RuntimeError in prod mode
+    #    that preserves BOTH the playwright root cause and the curl fallback error.
+    mock_playwright_fail2 = build_playwright_mock(
+        page_evaluate_return={},
+        launch_side_effect=Exception("Playwright init error")
+    )
     mock_sess_err = MagicMock()
     mock_sess_err.__aenter__.return_value = mock_sess_err
     mock_sess_err.get = AsyncMock(side_effect=Exception("Curl cffi error"))
-    with patch("playwright.async_api.async_playwright", side_effect=Exception("Playwright init error")):
+    with patch("playwright.async_api.async_playwright", return_value=mock_playwright_fail2):
         with patch("curl_cffi.requests.AsyncSession", return_value=mock_sess_err):
-            with pytest.raises(Exception):
+            with pytest.raises(RuntimeError) as exc_info:
                 await collector_prod.collect_comments("post_123", count=1)
+            msg = str(exc_info.value)
+            # 根因（Playwright 错误）必须出现在异常消息中，不再被 curl 错误掩盖。
+            assert "Playwright init error" in msg
+            assert "Curl cffi error" in msg
 
 def test_select_posts():
     collector = DouyinCollector()

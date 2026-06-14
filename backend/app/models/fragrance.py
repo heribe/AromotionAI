@@ -12,31 +12,37 @@ from sqlalchemy import Column, String, JSON, DateTime, ForeignKey, Text
 from sqlalchemy.orm import relationship
 from app.database import Base
 
+
+def _utcnow() -> datetime.datetime:
+    """Timezone-aware UTC now; replaces deprecated datetime.datetime.utcnow()."""
+    return datetime.datetime.now(datetime.timezone.utc)
+
+
 class FragranceSession(Base):
     __tablename__ = "fragrance_sessions"
-    
+
     id = Column(String(36), primary_key=True, index=True)
     task_id = Column(String(36), ForeignKey("analysis_tasks.id", ondelete="CASCADE"), nullable=False)
     user_id = Column(String(36), nullable=True)
     selected_tags = Column(JSON, nullable=False)
     recommendations = Column(JSON, nullable=False) # Final recommended perfume formula list
     status = Column(String(20), default="generating", nullable=False) # "generating" | "completed" | "error"
-    
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
-    
+
+    created_at = Column(DateTime, default=_utcnow)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
+
     task = relationship("AnalysisTask", back_populates="fragrance_sessions")
     messages = relationship("ChatMessage", back_populates="session", cascade="all, delete-orphan")
 
 
 class ChatMessage(Base):
     __tablename__ = "chat_messages"
-    
+
     id = Column(String(36), primary_key=True, index=True)
     session_id = Column(String(36), ForeignKey("fragrance_sessions.id", ondelete="CASCADE"), nullable=False)
     role = Column(String(20), nullable=False) # "user", "assistant"
     content = Column(Text, nullable=False)
     updated_plans = Column(JSON, nullable=True) # Modified perfume formula in the conversation
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
-    
+    created_at = Column(DateTime, default=_utcnow)
+
     session = relationship("FragranceSession", back_populates="messages")
