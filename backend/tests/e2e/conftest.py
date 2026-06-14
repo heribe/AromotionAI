@@ -188,12 +188,16 @@ def _valid_selected_tags() -> dict:
 
 
 def _mock_ai_result(plan_count: int = 2) -> dict:
-    """MockFragranceEngine 默认返回值（iceberg + plans + notes 全字段）。"""
+    """MockFragranceEngine 默认返回值（iceberg + plans + notes 全字段）。
+
+    reason/story 文案刻意写长（>50 字符），以匹配 e2e 用例对长度的断言，
+    并贴近真实 PromptFragranceEngine 的产出规模。
+    """
     return {
         "iceberg_analysis": {
-            "surface": "显性层分析：粉丝偏好花果香调与甜美系穿搭",
-            "middle": "情感层分析：追求清新活力与优雅浪漫的情绪表达",
-            "deep": "深层分析：渴望通过香气建立精致而独特的个人身份认同",
+            "surface": "显性层分析：粉丝偏好花果香调与甜美系穿搭，日常分享以清新活力为主",
+            "middle": "情感层分析：追求清新活力与优雅浪漫的情绪表达，渴望被看见与被理解",
+            "deep": "深层分析：渴望通过香气建立精致而独特的个人身份认同，在群体中脱颖而出",
         },
         "recommendations": [
             {
@@ -201,21 +205,29 @@ def _mock_ai_result(plan_count: int = 2) -> dict:
                 "name": f"方案 {i + 1}",
                 "category": "花果香调",
                 "top_notes": [
-                    {"name": "佛手柑", "description": "清新柑橘前调", "reason": "活力开场"},
-                    {"name": "柠檬", "description": "明亮果香", "reason": "提升清新感"},
+                    {"name": "佛手柑", "description": "清新柑橘前调，明亮开场", "reason": "活力开场，呼应甜美系少女感"},
+                    {"name": "柠檬", "description": "明亮果香，提升清新感", "reason": "强化前调的鲜活度与辨识度"},
                 ],
                 "middle_notes": [
-                    {"name": "玫瑰", "description": "浪漫花香中调", "reason": "优雅主体"},
+                    {"name": "玫瑰", "description": "浪漫花香中调，优雅主体", "reason": "优雅主体，承接前调过渡到后调"},
                 ],
                 "base_notes": [
-                    {"name": "白檀", "description": "温暖木质尾调", "reason": "持久收尾"},
-                    {"name": "麝香", "description": "柔和粉香", "reason": "肌肤贴附感"},
+                    {"name": "白檀", "description": "温暖木质尾调，持久收尾", "reason": "持久收尾，赋予香气深度与记忆点"},
+                    {"name": "麝香", "description": "柔和粉香，肌肤贴附感", "reason": "肌肤贴附感，提升贴身佩戴的亲密性"},
                 ],
-                "recommendation_reason": f"方案 {i + 1} 推荐理由：基于冰山三层分析，"
-                "该组合契合粉丝对清新花果香调与优雅气质的双重诉求。",
-                "fragrance_story": f"方案 {i + 1} 灵感故事：一场晨光中的花园漫步，"
-                "佛手柑的清新与玫瑰的浪漫在白檀的温暖中沉淀，"
-                "勾勒出独立而精致的女性形象。",
+                "recommendation_reason": (
+                    f"方案 {i + 1} 推荐理由：基于冰山三层分析与粉丝画像聚合，"
+                    "该组合以花果香调为骨架，前调佛手柑与柠檬的清新活力契合粉丝对甜美系穿搭的偏好，"
+                    "中调玫瑰的优雅浪漫呼应其情感层对精致感的追求，后调白檀与麝香则满足深层身份认同的需要。"
+                    "整体配方在清新与温暖之间形成层次张力，适合日常通勤与约会社交场景。"
+                ),
+                "fragrance_story": (
+                    f"方案 {i + 1} 灵感故事：一场晨光中的花园漫步，佛手柑的清新与玫瑰的浪漫"
+                    "在白檀的温暖中沉淀。这位博主粉丝群体向往的，是一种既能在人群中闪耀、"
+                    "又能在独处时自洽的生活美学——香气从活泼的花果渐变为沉静的木质，"
+                    "恰如她从清晨出门到深夜归家的情绪曲线。每一缕香都在讲述一个"
+                    "独立而精致的女性如何与世界温柔相处的故事。"
+                ),
             }
             for i in range(plan_count)
         ],
