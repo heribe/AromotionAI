@@ -14,10 +14,26 @@
   - [x] M4.2: AnalysisService (Pipeline Orchestration) (DONE)
   - [x] M4.3: Analysis REST + SSE API (DONE, 23 tests passed)
   - [x] M4.4: Report/Tags/Delete endpoints (DONE)
-- [ ] Milestone 5: Fragrance Recommend Engine (PLANNED)
+- [x] Milestone 5: Fragrance Recommend Engine (DONE)
+  - [x] M5.1: FragranceEngine ABC + PromptFragranceEngine (DONE, 20 service tests passed)
+  - [x] M5.2: FragranceService 业务编排 (DONE)
+  - [x] M5.3: Fragrance REST API 5 端点 (DONE, 15 API tests passed)
 - [ ] Milestone 6: Integration & Final Gate (PLANNED)
 
 ## Detailed Status
+### Milestone 5: Fragrance Recommend Engine
+- **M5.1: FragranceEngine ABC + PromptFragranceEngine**
+  - **实现**: `backend/app/engines/` 中的 `base.py`（FragranceEngine ABC）、`prompt_engine.py`（基于 Prompt 工程的第一版引擎，冰山三层分析 + 香调推荐 + 对话微调）、`__init__.py`（引擎注册表与工厂）。内联常量 `PROMPT_VERSION="v1"`、温度（generate 0.8 / chat 0.6）、`MAX_HISTORY_MESSAGES=20`。
+  - **后续接入**: Dify / LocalAgent 的接入路径见 `docs/03-part2-backend.md` §6.1 与设计文档 §7。
+  - **状态**: 已完成。
+- **M5.2: FragranceService 业务编排**
+  - **实现**: `backend/app/services/fragrance_service.py`。封装 generate / chat / regenerate / get_session / get_history 五个业务方法。含权重归一化、互斥组标签校验、JSON 解析重试（1 次）、聊天历史滑窗、updated_plans 按 plan_id 合并。
+  - **异常类**: SessionNotFoundError (404) / SessionStateError (400) / TaskNotCompletedError (400) / TagsValidationError (422) / FragranceEngineError (502)。
+  - **状态**: 已完成。
+- **M5.3: Fragrance REST API**
+  - **实现**: `backend/app/api/v1/fragrance.py` 实现 §2.1-2.5 全部接口：POST /generate、POST /{session_id}/chat、POST /{session_id}/regenerate、GET /{session_id}、GET /{session_id}/history。配套 `schemas/fragrance.py`。
+  - **测试**: `backend/tests/test_fragrance_service.py`（20 用例）+ `backend/tests/test_fragrance_api.py`（15 用例），共 35 用例全部通过。
+  - **状态**: 已完成。
 ### Milestone 3: AI Analyzers & Profile Agg
 - **M3.1: AI Registry**
   - **实现**: `backend/app/ai/` 中的基类、GLM、OpenAI、DeepSeek 适配器以及注册表与槽位绑定。
@@ -59,3 +75,9 @@
   - **原因**：Playwright mock 链路与实际 collector 代码已漂移，fallback 到 curl_cffi 时会发起**真实抖音 API 请求**。
   - **如何验证**：(1) 重写 mock 以匹配当前 `collect_comments` 的实际调用链；或 (2) 在拥有有效抖音 Cookie + 网络访问的环境下手动运行。
   - **优先级**：M5/M6 阶段统一处理真实网络集成测试时一并修复。
+
+### ⚠️ e2e 测试套件 httpx 兼容性问题（待修复，非本次提交范围）
+- **现象**：`tests/e2e/` 下 82 个用例在 setup 阶段全部报错 `TypeError: AsyncClient.__init__() got an unexpected keyword argument 'app'`。
+- **原因**：`tests/e2e/conftest.py:930` 使用 `httpx.AsyncClient(app=app, ...)`，该参数在新版 httpx 中已废弃（应改用 `httpx.ASGITransport(app=app)`）。
+- **影响范围**：仅 e2e 测试，不影响单元测试（133 passed, 1 skipped）。
+- **优先级**：M6 阶段统一修复 e2e 测试基础设施时处理。
