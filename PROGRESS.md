@@ -12,6 +12,8 @@
 - [/] Milestone 4: Task Manager & SSE API (IN_PROGRESS)
   - [x] M4.1: TaskManager (Memory-based) (DONE, tests passed)
   - [x] M4.2: AnalysisService (Pipeline Orchestration) (DONE)
+  - [x] M4.3: Analysis REST + SSE API (DONE, 23 tests passed)
+  - [x] M4.4: Report/Tags/Delete endpoints (DONE)
 - [ ] Milestone 5: Fragrance Recommend Engine (PLANNED)
 - [ ] Milestone 6: Integration & Final Gate (PLANNED)
 
@@ -39,6 +41,13 @@
   - **实现**: `backend/app/services/analysis_service.py` 核心管道编排，注入与导出。
   - **测试**: `backend/tests/test_analysis_service.py`，包含全链路 Mock 管道运行断言，以及步骤异常回滚断言。
   - **状态**: 已完成，全部 9 个测试 (test_task_manager + test_analysis_service) 通过。
+- **M4.3: Analysis REST + SSE API**
+  - **实现**: `backend/app/api/v1/analysis.py` 实现 §2.1-2.7 全部接口：POST /create、GET /{task_id}、GET /list、GET /{task_id}/progress (SSE)、POST /{task_id}/cancel、GET /{task_id}/report、GET /{task_id}/tags、DELETE /{task_id}。配套 `schemas/analysis.py` 与 `services/task_service.py`。
+  - **测试**: `backend/tests/test_analysis_api.py`，覆盖创建/详情/列表/取消/报告/标签/删除/SSE 流共 23 用例。
+  - **状态**: 已完成。
+- **M4.4: Report/Tags/Delete endpoints**
+  - **实现**: 与 M4.3 一并交付；DELETE 任务时清理 covers/avatars/grids 媒体；tags 端点按 §9.2 处理互斥标签组。
+  - **状态**: 已完成。
 
 ## Known Pre-existing Test Failures (待修复，非本次提交范围)
 > 以下 3 个用例在 `HEAD` 上即失败，与 M4.1/M4.2 无关，需后续单独排查：
