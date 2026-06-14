@@ -34,9 +34,9 @@ async def test_basic_pub_sub():
     events = await collect_events(tm.subscribe(task_id))
     
     assert len(events) >= 3
-    assert events[0] == {"event_type": "progress", "data": {"percent": 20}}
-    assert events[1] == {"event_type": "progress", "data": {"percent": 60}}
-    assert events[-1]["event_type"] == "complete"
+    assert events[0] == {"type": "progress", "data": {"percent": 20}}
+    assert events[1] == {"type": "progress", "data": {"percent": 60}}
+    assert events[-1]["type"] == "complete"
     
     # Wait slightly to ensure done callback completes state transfer
     await asyncio.sleep(0.01)
@@ -66,7 +66,7 @@ async def test_task_cancellation():
     
     events = await sub_task
     assert len(events) > 0
-    assert events[-1]["event_type"] == "error"
+    assert events[-1]["type"] == "error"
     assert events[-1]["data"]["status"] == "cancelled"
 
 @pytest.mark.asyncio
@@ -187,6 +187,6 @@ async def test_task_failed_state():
         events.append(event)
         
     assert len(events) == 1
-    assert events[0]["event_type"] == "error"
+    assert events[0]["type"] == "error"
     assert events[0]["data"]["status"] == "failed"
     assert "Something went wrong" in events[0]["data"]["message"]

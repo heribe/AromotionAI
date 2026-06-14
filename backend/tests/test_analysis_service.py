@@ -52,7 +52,7 @@ async def test_full_pipeline_mock_run(db: Session):
     await asyncio.sleep(0.01)
     
     # 2. 验证事件流
-    event_types = [e["event_type"] for e in events]
+    event_types = [e["type"] for e in events]
     assert "progress" in event_types
     assert "step_complete" in event_types
     assert "complete" in event_types
@@ -123,7 +123,7 @@ async def test_pipeline_error_rollback(db: Session):
         await asyncio.sleep(0.01)
         
     # 1. 验证事件流中有 error 事件
-    event_types = [e["event_type"] for e in events]
+    event_types = [e["type"] for e in events]
     assert "error" in event_types
     
     # 2. 验证任务状态更新为 failed，并记录了错误信息

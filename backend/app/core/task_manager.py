@@ -99,8 +99,11 @@ class TaskManager:
             task.add_done_callback(clean_up)
 
     async def emit(self, task_id: str, event_type: str, data: dict) -> None:
-        """向所有订阅该 task_id 的队列推送事件，同时写入历史缓冲。"""
-        event = {"event_type": event_type, "data": data}
+        """向所有订阅该 task_id 的队列推送事件，同时写入历史缓冲。
+
+        事件结构遵循文档契约：``{"type": <event_type>, "data": <payload>}``。
+        """
+        event = {"type": event_type, "data": data}
         async with self._lock:
             # 写入历史缓冲以供晚到订阅者回放
             history = self._event_history.setdefault(task_id, [])
@@ -140,7 +143,7 @@ class TaskManager:
         terminal_seen = False
         for event in history_snapshot:
             yield event
-            if event.get("event_type") in ("complete", "error"):
+            if event.get("type") in ("complete", "error"):
                 terminal_seen = True
                 return
 
@@ -148,7 +151,7 @@ class TaskManager:
         if current_status in ("completed", "failed", "cancelled") and not history_snapshot:
             event_type = "complete" if current_status == "completed" else "error"
             yield {
-                "event_type": event_type,
+                "type": event_type,
                 "data": {
                     "status": current_status,
                     "message": final_message
@@ -168,7 +171,7 @@ class TaskManager:
             while True:
                 event = await queue.get()
                 yield event
-                if event.get("event_type") in ("complete", "error"):
+                if event.get("type") in ("complete", "error"):
                     break
         finally:
             async with self._lock:
