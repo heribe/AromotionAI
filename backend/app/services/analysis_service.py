@@ -310,19 +310,6 @@ class AnalysisService:
                 avatars_dir = settings.BASE_DIR / "data" / "media" / "avatars"
                 os.makedirs(avatars_dir, exist_ok=True)
 
-                import random
-
-                provinces = [
-                    "广东", "北京", "上海", "浙江", "江苏",
-                    "四川", "山东", "辽宁", "吉林", "黑龙江",
-                    "河北", "河南",
-                ]
-                cities = [
-                    "深圳", "北京", "上海", "杭州", "南京",
-                    "成都", "济南", "沈阳", "长春", "哈尔滨",
-                    "石家庄", "郑州",
-                ]
-
                 for tc in target_commenters:
                     avatar_url = None
                     if isinstance(tc.raw_data, dict):
@@ -348,22 +335,22 @@ class AnalysisService:
                             img = Image.new("RGB", (10, 10), color=(0, 255, 0))
                             img.save(local_avatar_path, "JPEG")
 
-                    idx = random.randint(0, len(provinces) - 1)
-                    prov = provinces[idx]
-                    cit = cities[idx]
-
+                    # 评论者地域用评论的 ip_label（真实 IP 属地，如"广东"）；
+                    # 性别/年龄抖音评论 API 不返回，留空（不再 random 伪造）
+                    prov = ""
+                    cit = ""
                     if isinstance(tc.raw_data, dict):
                         user_data = tc.raw_data.get("user") or {}
-                        prov = user_data.get("province") or prov
-                        cit = user_data.get("city") or cit
+                        prov = user_data.get("province") or tc.raw_data.get("ip_label") or ""
+                        cit = user_data.get("city") or ""
 
                     cp = CommenterProfile(
                         id=str(uuid.uuid4()),
                         task_id=task_id,
                         platform_uid=tc.user_id,
                         nickname=tc.nickname or f"粉丝_{tc.user_id}",
-                        gender=random.choice(["female", "male", "unknown"]),
-                        age=random.choice(["18-24", "25-30", "31-35", "36-40"]),
+                        gender=None,
+                        age=None,
                         province=prov,
                         city=cit,
                         signature="专注种草",

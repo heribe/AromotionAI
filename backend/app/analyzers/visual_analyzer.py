@@ -125,8 +125,11 @@ class VisualAnalyzer(BaseAnalyzer):
         """
         provider, model_name = self._get_provider_for_slot("visual_analysis")
 
+        # 网格行列与 create_grid_image(grid_size=person_count) 保持一致：
+        # rows=2, cols=(person_count+1)//2，避免 prompt 写死 2x5 与实际网格错位
+        grid_cols = (person_count + 1) // 2
         prompt = (
-            f"输入图片是一个由多张封面拼接成的 2x5 网格图（从左到右，从上到下）。\n"
+            f"输入图片是一个由多张封面拼接成的 2x{grid_cols} 网格图（从左到右，从上到下）。\n"
             f"请逐格分析前 {person_count} 个格子的信息（每一格代表一个不同用户的封面），\n"
             f"并输出一个 JSON 数组，数组长度需精确为 {person_count}，不要返回任何说明文字。\n"
             f"JSON 数组中每个对象的格式必须为：\n"
