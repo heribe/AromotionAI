@@ -3,7 +3,7 @@
 # Stage 2: nginx 托管静态文件
 
 # ---------- Stage 1: 构建 ----------
-FROM node:20-slim AS builder
+FROM node:24-slim AS builder
 
 WORKDIR /build
 

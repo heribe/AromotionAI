@@ -17,8 +17,8 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
 WORKDIR /app
 
-# 先拷依赖描述，利用 Docker 层缓存（依赖变动少时跳过重装）
-COPY pyproject.toml uv.lock ./
+# 先拷依赖描述 + README（pyproject 声明了 readme = "README.md"，uv sync 前必须存在），利用 Docker 层缓存
+COPY pyproject.toml uv.lock README.md ./
 
 # 同步生产依赖（不含 dev 组）。
 # 注：uv.lock 若含平台特定条目，uv 会按当前 Linux 平台选择兼容版本。
@@ -26,7 +26,6 @@ RUN uv sync --no-dev
 
 # 拷贝应用代码
 COPY app/ ./app/
-COPY README.md ./
 
 # 数据目录（运行时由 compose 挂载卷覆盖，这里只保证默认路径存在）
 RUN mkdir -p /app/data/db /app/data/media /app/data/cookies

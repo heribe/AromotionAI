@@ -55,6 +55,7 @@ dependencies = [
     { name = "alembic" },
     { name = "curl-cffi" },
     { name = "fastapi" },
+    { name = "httpx" },
     { name = "pillow" },
     { name = "playwright" },
     { name = "pydantic" },
@@ -67,7 +68,6 @@ dependencies = [
 
 [package.optional-dependencies]
 dev = [
-    { name = "httpx" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "ruff" },
@@ -78,7 +78,7 @@ requires-dist = [
     { name = "alembic", specifier = ">=1.11.0" },
     { name = "curl-cffi", specifier = ">=0.5.9" },
     { name = "fastapi", specifier = ">=0.100.0" },
-    { name = "httpx", marker = "extra == 'dev'", specifier = ">=0.24.0" },
+    { name = "httpx", specifier = ">=0.24.0" },
     { name = "pillow", specifier = ">=10.0.0" },
     { name = "playwright", specifier = ">=1.35.0" },
     { name = "pydantic", specifier = ">=2.0.0" },
