@@ -25,11 +25,12 @@ def test_preprocess_image_decompression_bomb(tmp_path):
     PIL.Image.MAX_IMAGE_PIXELS = 10000
     
     try:
-        # 创建一个 200x100 = 20000 像素的图片，它大于 10000 像素限制
-        img = Image.new("RGB", (200, 100), color="blue")
+        # 创建一个 300x100 = 30000 像素的图片，需 > 2 × MAX_IMAGE_PIXELS (20000)
+        # 才能触发 PIL 的 DecompressionBombError（仅 >= 2× 才报错，否则只 Warning）
+        img = Image.new("RGB", (300, 100), color="blue")
         img.save(img_path)
         img.close()
-        
+
         with pytest.raises(RuntimeError) as exc_info:
             mp.preprocess_image(img_path)
         assert "Unsupported or corrupted image format" in str(exc_info.value)

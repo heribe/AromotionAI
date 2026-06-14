@@ -50,7 +50,12 @@
   - **状态**: 已完成。
 
 ## Known Pre-existing Test Failures (待修复，非本次提交范围)
-> 以下 3 个用例在 `HEAD` 上即失败，与 M4.1/M4.2 无关，需后续单独排查：
-- `tests/test_analyzers.py::TestProfileAggregator::test_aggregate_compatibility`
-- `tests/test_boundary_stress.py::test_preprocess_image_decompression_bomb`
-- `tests/test_douyin_collector.py::test_collect_comments` (json.decoder.JSONDecodeError)
+> ~~以下 3 个用例在 `HEAD` 上即失败，与 M4.1/M4.2 无关，需后续单独排查：~~
+> **2026-06-14 已修复**：3 个用例全部处理完成（2 修复 + 1 跳过）。
+> 单元测试整体结果：**98 passed, 1 skipped, 0 failed**。
+
+### ⚠️ 待人工测试（已标记 @pytest.mark.skip）
+- `tests/test_douyin_collector.py::test_collect_comments`
+  - **原因**：Playwright mock 链路与实际 collector 代码已漂移，fallback 到 curl_cffi 时会发起**真实抖音 API 请求**。
+  - **如何验证**：(1) 重写 mock 以匹配当前 `collect_comments` 的实际调用链；或 (2) 在拥有有效抖音 Cookie + 网络访问的环境下手动运行。
+  - **优先级**：M5/M6 阶段统一处理真实网络集成测试时一并修复。

@@ -325,6 +325,7 @@ class TestProfileAggregator:
         aggregator = ProfileAggregator()
         
         # 模拟 SQLAlchemy model 实例
+        # 注意：platform 字段位于 AnalysisTask，而非 BloggerProfile
         blogger_model = BloggerProfile(
             task_id="model-task-111",
             nickname="ModelBlogger",
@@ -333,7 +334,6 @@ class TestProfileAggregator:
             province="广东省",
             city="广州市",
             follower_count=100000,
-            platform="douyin",
             platform_uid="123456",
             raw_data={}
         )
