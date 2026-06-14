@@ -1,6 +1,8 @@
 import pytest
 import uuid
 
+from tests.e2e.conftest import _seed_completed_task_with_report, _seed_failed_task
+
 # Helper to create a completed task
 async def create_completed_task(client, read_sse_stream, suffix=""):
     payload = {
@@ -125,20 +127,13 @@ async def test_f5_generate_nonexistent_task(client):
     assert response.status_code == 404
 
 @pytest.mark.asyncio
-async def test_f5_generate_failed_task(client, read_sse_stream):
-    # Create a task that triggers failure
-    payload = {
-        "blogger_url": "https://www.douyin.com/user/MS4wLjABAAA_fail_frag",
-        "platform": "douyin",
-        "analysis_level": "standard"
-    }
-    create_resp = await client.post("/api/v1/analysis/create", json=payload)
-    task_id = create_resp.json()["data"]["task_id"]
-    await read_sse_stream(client, f"/api/v1/analysis/{task_id}/progress")
-    
+async def test_f5_generate_failed_task(client, db):
+    # seed failed task（真实 app 无 URL 含 fail 触发失败的魔法开关）
+    task = _seed_failed_task(db)
+
     # Try generating fragrance for failed task
     payload_gen = {
-        "task_id": task_id,
+        "task_id": task.id,
         "selected_tags": {"climate_consumption": {"climate_zone": ["湿热南方"]}}
     }
     response = await client.post("/api/v1/fragrance/generate", json=payload_gen)
@@ -146,36 +141,37 @@ async def test_f5_generate_failed_task(client, read_sse_stream):
     assert "failed" in response.json()["detail"].lower()
 
 @pytest.mark.asyncio
-async def test_f5_generate_empty_tags(client, read_sse_stream):
-    task_id = await create_completed_task(client, read_sse_stream, "6")
+async def test_f5_generate_empty_tags(client, db):
+    task, _ = _seed_completed_task_with_report(db, "empty_tags")
     payload = {
-        "task_id": task_id,
+        "task_id": task.id,
         "selected_tags": {}
     }
     response = await client.post("/api/v1/fragrance/generate", json=payload)
-    assert response.status_code == 400
+    # 真实契约：空 tags 抛 TagsValidationError → 422（stub 是 400，已对齐真实）
+    assert response.status_code == 422
 
 @pytest.mark.asyncio
-async def test_f5_generate_invalid_tags_structure(client, read_sse_stream):
-    task_id = await create_completed_task(client, read_sse_stream, "7")
+async def test_f5_generate_invalid_tags_structure(client, db):
+    task, _ = _seed_completed_task_with_report(db, "invalid_tags")
     payload = {
-        "task_id": task_id,
+        "task_id": task.id,
         "selected_tags": "not-a-dict"
     }
     response = await client.post("/api/v1/fragrance/generate", json=payload)
     assert response.status_code == 422
 
 @pytest.mark.asyncio
-async def test_f5_generate_invalid_plan_count(client, read_sse_stream):
-    task_id = await create_completed_task(client, read_sse_stream, "8")
+async def test_f5_generate_invalid_plan_count(client, db):
+    task, _ = _seed_completed_task_with_report(db, "invalid_plan_count")
     payload = {
-        "task_id": task_id,
+        "task_id": task.id,
         "selected_tags": {"climate_consumption": {"climate_zone": ["湿热南方"]}},
         "plan_count": 0  # Invalid < 1
     }
     response = await client.post("/api/v1/fragrance/generate", json=payload)
     assert response.status_code == 422
-    
-    payload["plan_count"] = 11  # Invalid > 10
+
+    payload["plan_count"] = 11  # Invalid > 5 (真实 schema le=5)
     response = await client.post("/api/v1/fragrance/generate", json=payload)
     assert response.status_code == 422

@@ -292,3 +292,267 @@ def test_create_grid_image_invalid_dimensions(tmp_path):
     with pytest.raises(ValueError) as exc_info:
         mp.create_grid_image([], out_grid, grid_size=-1)
     assert "Grid rows and columns must be greater than 0" in str(exc_info.value)
+
+
+# ==========================================
+# 5. FragranceService 对抗性测试（M5 边界）
+# ==========================================
+
+import os
+os.environ.setdefault("AROMOTION_TEST_MODE", "mock")
+
+import uuid
+import datetime
+from app.services.fragrance_service import (
+    FragranceService,
+    SessionNotFoundError,
+    SessionStateError,
+    TagsValidationError,
+    SESSION_STATUS_ERROR,
+    SESSION_STATUS_COMPLETED,
+)
+from app.engines.base import FragranceEngine
+from app.models.analysis import AnalysisTask
+from app.models.profile import ProfileReport
+from app.models.fragrance import FragranceSession, ChatMessage
+from app.schemas.fragrance import GenerateRequest, RegenerateRequest
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from app.database import Base
+
+
+class _StubFragranceEngine(FragranceEngine):
+    """对抗测试用的 stub 引擎，按队列返回结果。"""
+    def __init__(self):
+        self.generate_returns = []
+        self.chat_returns = []
+
+    async def generate(self, fused_profile, selected_tags, plan_count=3):
+        if self.generate_returns:
+            return self.generate_returns.pop(0)
+        return {
+            "iceberg_analysis": {"surface": "s", "middle": "m", "deep": "d"},
+            "recommendations": [
+                {
+                    "plan_id": f"plan_{i+1}", "name": f"p{i+1}", "category": "c",
+                    "top_notes": [{"name": "n", "description": "d", "reason": "r"}],
+                    "middle_notes": [{"name": "n", "description": "d", "reason": "r"}],
+                    "base_notes": [{"name": "n", "description": "d", "reason": "r"}],
+                    "recommendation_reason": "r" * 60,
+                    "fragrance_story": "s" * 60,
+                }
+                for i in range(plan_count)
+            ],
+        }
+
+    async def chat(self, history, current_plans, user_message, selected_tags):
+        if self.chat_returns:
+            return self.chat_returns.pop(0)
+        return ("ok", None)
+
+
+@pytest.fixture
+def frag_db():
+    """函数级隔离 SQLite（与 conftest.db 同构，独立文件）。"""
+    from app.config import settings
+    db_path = settings.BASE_DIR / "data/db/test_adversarial_frag.db"
+    url = f"sqlite:///{db_path}"
+    engine = create_engine(url, connect_args={"check_same_thread": False})
+    Base.metadata.create_all(bind=engine)
+    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    session = SessionLocal()
+    try:
+        yield session
+    finally:
+        session.close()
+        Base.metadata.drop_all(bind=engine)
+
+
+def _seed_completed(frag_db):
+    """seed completed task + report（最小结构，满足 generate 前置条件）。"""
+    now = datetime.datetime.now(datetime.timezone.utc)
+    task = AnalysisTask(
+        id=str(uuid.uuid4()), platform="douyin",
+        blogger_url="https://www.douyin.com/user/x",
+        analysis_level="standard", status="completed", progress=100,
+        current_step="done", created_at=now, updated_at=now, completed_at=now,
+    )
+    frag_db.add(task)
+    frag_db.commit()
+    report = ProfileReport(
+        id=str(uuid.uuid4()), task_id=task.id,
+        climate_consumption={"climate_zone": {"湿热南方": 60.0, "干燥北方": 40.0}, "summary": "x"},
+        fragrance_consumption={"price_tier": {"轻奢入门": 50.0}, "summary": "x"},
+        fashion_fragrance_map={"fashion_style": {"甜美系": 40.0}, "summary": "x"},
+        lifestyle_scenario={"core_interest": {"日常自拍": 30.0}, "summary": "x"},
+        overall_summary="x", full_report_markdown="## x",
+    )
+    frag_db.add(report)
+    frag_db.commit()
+    return task
+
+
+# ---------- _normalize_weights 边界 ----------
+
+def test_normalize_weights_sum_zero_fallback(frag_db):
+    """blogger_weight + audience_weight = 0 时应 fallback 到 0.5/0.5。"""
+    svc = FragranceService(frag_db, engine=_StubFragranceEngine())
+    bw, aw, warnings = svc._normalize_weights(0.0, 0.0)
+    assert bw == 0.5 and aw == 0.5
+    assert any("fell back to 0.5/0.5" in w for w in warnings)
+
+
+def test_normalize_weights_auto_normalize(frag_db):
+    """权重和 != 1.0 时应自动归一化并产生 warning。"""
+    svc = FragranceService(frag_db, engine=_StubFragranceEngine())
+    bw, aw, warnings = svc._normalize_weights(0.3, 0.3)
+    assert abs(bw - 0.5) < 1e-9 and abs(aw - 0.5) < 1e-9
+    assert any("auto-normalized" in w for w in warnings)
+
+
+def test_normalize_weights_sum_one_no_warning(frag_db):
+    """权重和 = 1.0 时原样返回，无 warning。"""
+    svc = FragranceService(frag_db, engine=_StubFragranceEngine())
+    bw, aw, warnings = svc._normalize_weights(0.6, 0.4)
+    assert bw == 0.6 and aw == 0.4
+    assert warnings == []
+
+
+# ---------- _validate_tags 互斥组校验 ----------
+
+@pytest.mark.asyncio
+async def test_validate_tags_mutex_violation(frag_db):
+    """climate_zone 互斥组选 2 个标签应抛 TagsValidationError。"""
+    task = _seed_completed(frag_db)
+    svc = FragranceService(frag_db, engine=_StubFragranceEngine())
+    req = GenerateRequest(
+        task_id=task.id,
+        selected_tags={"climate_consumption": {"climate_zone": ["湿热南方", "干燥北方"]}},
+        plan_count=2,
+    )
+    with pytest.raises(TagsValidationError):
+        await svc.generate(req)
+
+
+@pytest.mark.asyncio
+async def test_validate_tags_empty_dict(frag_db):
+    """空 selected_tags 应抛 TagsValidationError（非 None）。"""
+    task = _seed_completed(frag_db)
+    svc = FragranceService(frag_db, engine=_StubFragranceEngine())
+    req = GenerateRequest(task_id=task.id, selected_tags={}, plan_count=2)
+    with pytest.raises(TagsValidationError):
+        await svc.generate(req)
+
+
+# ---------- chat 滑窗 ----------
+
+@pytest.mark.asyncio
+async def test_chat_sliding_window_truncation(frag_db):
+    """历史消息超过 MAX_HISTORY_MESSAGES 时应截断到最近 N 条。"""
+    from app.engines.prompt_engine import MAX_HISTORY_MESSAGES
+    task = _seed_completed(frag_db)
+    engine = _StubFragranceEngine()
+    svc = FragranceService(frag_db, engine=engine)
+
+    # generate 创建 session + 初始消息（1 条 assistant）
+    gen_req = GenerateRequest(
+        task_id=task.id,
+        selected_tags={"climate_consumption": {"climate_zone": ["湿热南方"]}},
+        plan_count=2,
+    )
+    gen_data = await svc.generate(gen_req)
+    session_id = gen_data.session_id
+
+    # 灌入超过 MAX_HISTORY_MESSAGES 的历史消息（绕过 chat 接口直接写 DB）
+    now = datetime.datetime.now(datetime.timezone.utc)
+    for i in range(MAX_HISTORY_MESSAGES + 5):
+        frag_db.add(ChatMessage(
+            id=str(uuid.uuid4()), session_id=session_id,
+            role="user" if i % 2 == 0 else "assistant",
+            content=f"msg_{i}", updated_plans=None,
+            created_at=now + datetime.timedelta(seconds=i),
+        ))
+    frag_db.commit()
+
+    # 调 chat，验证传给 engine 的 history 被截断
+    captured_history = []
+    original_chat = engine.chat
+
+    async def spy_chat(history, current_plans, user_message, selected_tags):
+        captured_history.extend(history)
+        return await original_chat(history, current_plans, user_message, selected_tags)
+    engine.chat = spy_chat
+
+    await svc.chat(session_id, "new message")
+    assert len(captured_history) <= MAX_HISTORY_MESSAGES
+
+
+# ---------- regenerate 清空 chat ----------
+
+@pytest.mark.asyncio
+async def test_regenerate_clears_chat_history(frag_db):
+    """regenerate 应清空旧 chat 历史并重置为单条初始消息。"""
+    task = _seed_completed(frag_db)
+    svc = FragranceService(frag_db, engine=_StubFragranceEngine())
+
+    gen_req = GenerateRequest(
+        task_id=task.id,
+        selected_tags={"climate_consumption": {"climate_zone": ["湿热南方"]}},
+        plan_count=2,
+    )
+    gen_data = await svc.generate(gen_req)
+    session_id = gen_data.session_id
+
+    # 灌入若干对话
+    await svc.chat(session_id, "msg1")
+    await svc.chat(session_id, "msg2")
+    history_before = svc.get_history(session_id)
+    assert len(history_before.messages) > 1
+
+    # regenerate
+    regen_req = RegenerateRequest(
+        selected_tags={"climate_consumption": {"climate_zone": ["湿热南方"]}},
+        plan_count=3,
+    )
+    await svc.regenerate(session_id, regen_req)
+
+    # 验证历史被清空到只剩 1 条初始 assistant 消息
+    history_after = svc.get_history(session_id)
+    assert len(history_after.messages) == 1
+    assert history_after.messages[0].role == "assistant"
+
+
+# ---------- session 状态机 ----------
+
+@pytest.mark.asyncio
+async def test_chat_rejected_on_error_session(frag_db):
+    """session 处于 error 态时应拒绝 chat（SessionStateError）。"""
+    task = _seed_completed(frag_db)
+    svc = FragranceService(frag_db, engine=_StubFragranceEngine())
+
+    gen_req = GenerateRequest(
+        task_id=task.id,
+        selected_tags={"climate_consumption": {"climate_zone": ["湿热南方"]}},
+        plan_count=2,
+    )
+    gen_data = await svc.generate(gen_req)
+    session_id = gen_data.session_id
+
+    # 手动把 session 置为 error 态
+    session = frag_db.query(FragranceSession).filter(
+        FragranceSession.id == session_id
+    ).first()
+    session.status = SESSION_STATUS_ERROR
+    frag_db.commit()
+
+    with pytest.raises(SessionStateError):
+        await svc.chat(session_id, "anything")
+
+
+@pytest.mark.asyncio
+async def test_chat_nonexistent_session_raises(frag_db):
+    """对不存在的 session 调 chat 应抛 SessionNotFoundError。"""
+    svc = FragranceService(frag_db, engine=_StubFragranceEngine())
+    with pytest.raises(SessionNotFoundError):
+        await svc.chat(str(uuid.uuid4()), "msg")
+
