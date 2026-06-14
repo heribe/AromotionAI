@@ -10,7 +10,7 @@ AromotionAI is an AI-assisted tool for perfumers. The backend is built using Pyt
 4. **Analyzers (`app/analyzers`)**: Performs visual and semantic analysis using AI models.
 5. **AI Registry (`app/ai`)**: Manages GLM, DeepSeek, and OpenAI providers with a unified API.
 6. **Task Manager & SSE (`app/core`)**: Handles asynchronous background tasks and pushes real-time progress via Server-Sent Events.
-7. **Fragrance Engine (`app/fragrance`)**: Leverages Iceberg Theory via prompt engineering to suggest fragrance plans.
+7. **Fragrance Engine (`app/engines`)**: Leverages Iceberg Theory via prompt engineering to suggest fragrance plans.
 
 ---
 
@@ -22,9 +22,9 @@ AromotionAI is an AI-assisted tool for perfumers. The backend is built using Pyt
 | 1 | Infrastructure & Cookie Mgmt | DB setup, models, configuration, and `/api/v1/cookies` endpoints | None | DONE (Commit: ec2b7194) |
 | 2 | Data Collection & Media Proc | Douyin data collector (Playwright/curl) and ffmpeg media processing | M1 | DONE |
 | 3 | AI Analyzers & Profile Agg | Visual and semantic analyzers, profile aggregator | M1, M2 | DONE (Commit: 3e7ccbe) |
-| 4 | Task Manager & SSE API | Background task scheduling, SSE progress stream, task list API | M1, M2, M3 | PLANNED |
-| 5 | Fragrance Recommend Engine | Iceberg model prompting, Chat API, historical session management | M1, M4 | PLANNED |
-| 6 | Integration & Final Gate | Pass 100% of E2E test suite and adversarial coverage hardening | M1, M2, M3, M4, M5, E2E | PLANNED |
+| 4 | Task Manager & SSE API | Background task scheduling, SSE progress stream, task list API | M1, M2, M3 | DONE |
+| 5 | Fragrance Recommend Engine | Iceberg model prompting, Chat API, historical session management | M1, M4 | DONE |
+| 6 | Integration & Final Gate | Pass 100% of E2E test suite and adversarial coverage hardening | M1, M2, M3, M4, M5, E2E | DONE (229 passed) |
 
 ---
 
@@ -65,22 +65,22 @@ backend/
 ├── app/
 │   ├── __init__.py
 │   ├── main.py                     # FastAPI entry point
-│   ├── config.py                   # Configuration management
+│   ├── config.py                   # Configuration management (reads .env)
 │   ├── database.py                 # SQLAlchemy connection
 │   │
 │   ├── api/                        # API routes
 │   │   ├── __init__.py
-│   │   ├── v1/
-│   │   │   ├── __init__.py
-│   │   │   ├── router.py           # v1 main router
-│   │   │   ├── analysis.py         # Part1: analysis APIs
-│   │   │   ├── fragrance.py        # Part2: fragrance APIs
-│   │   │   ├── cookies.py          # Cookie management APIs
-│   │   │   └── tasks.py            # Task status APIs
-│   │   └── deps.py                 # Dependencies
+│   │   ├── deps.py                 # Dependencies
+│   │   └── v1/
+│   │       ├── __init__.py
+│   │       ├── router.py           # v1 main router
+│   │       ├── analysis.py         # Part1: analysis + task + SSE progress APIs
+│   │       ├── fragrance.py        # Part2: fragrance APIs
+│   │       └── cookies.py          # Cookie management APIs
 │   │
 │   ├── models/                     # SQLAlchemy models
 │   │   ├── __init__.py
+│   │   ├── base.py                 # Declarative base
 │   │   ├── analysis.py             # Analysis task model
 │   │   ├── blogger.py              # Blogger data model
 │   │   ├── profile.py              # Profile tags model
@@ -98,24 +98,19 @@ backend/
 │   │   ├── __init__.py
 │   │   ├── analysis_service.py     # Analysis workflow orchestration
 │   │   ├── fragrance_service.py    # Fragrance recommendation service
-│   │   └── cookie_service.py       # Cookie management service
+│   │   ├── cookie_service.py       # Cookie management service
+│   │   └── task_service.py         # Task list / status queries
 │   │
 │   ├── core/                       # Core modules
 │   │   ├── __init__.py
-│   │   ├── task_manager.py         # Async task manager
-│   │   ├── sse.py                  # SSE utilities
-│   │   └── exceptions.py           # Custom exceptions
+│   │   └── task_manager.py         # Async task manager + SSE emit/subscribe
 │   │
 │   ├── platforms/                  # Platform data collectors
 │   │   ├── __init__.py
-│   │   ├── base.py                 # Platform abstract base class
-│   │   ├── douyin/                 # Douyin collector
-│   │   │   ├── __init__.py
-│   │   │   ├── collector.py
-│   │   │   ├── parser.py
-│   │   │   └── config.py
-│   │   └── xiaohongshu/            # Red/Little Red Book (reserved)
-│   │       └── __init__.py
+│   │   ├── base.py                 # PlatformCollector abstract base class
+│   │   └── douyin/                 # Douyin collector
+│   │       ├── __init__.py
+│   │       └── collector.py        # curl_cffi profile/posts + Playwright comments
 │   │
 │   ├── analyzers/                  # Pluggable AI analyzers
 │   │   ├── __init__.py
@@ -131,26 +126,17 @@ backend/
 │   │   ├── provider_glm.py         # Zhipu GLM API
 │   │   ├── provider_openai.py      # OpenAI API
 │   │   ├── provider_deepseek.py    # DeepSeek API
-│   │   └── registry.py             # Model registration registry
+│   │   └── registry.py             # Provider registry + slot binding (chat/vision/fragrance)
 │   │
-│   ├── fragrance/                  # Fragrance recommendation engine
-│   │   ├── __init__.py
-│   │   ├── base.py                 # Recommender engine base class
-│   │   ├── iceberg_model.py        # Iceberg theory prompting implementation
-│   │   ├── prompt_templates.py     # Prompts definitions
-│   │   └── chat.py                 # Interactive chat session management
-│   │
-│   └── storage/                    # File storage layer
+│   └── engines/                    # Fragrance recommendation engine
 │       ├── __init__.py
-│       ├── base.py                 # Storage interface base
-│       ├── local.py                # Local storage
-│       └── cloud.py                # Cloud storage (reserved)
+│       ├── base.py                 # FragranceEngine base class
+│       └── prompt_engine.py        # Iceberg theory prompt + generate/chat implementation
 │
-├── alembic/                        # DB migrations
-├── alembic.ini
-├── pyproject.toml                  # Python dependency definition
-└── data/                           # Runtime storage
+├── pyproject.toml                  # Python dependency definition (uv)
+├── uv.lock                         # Locked dependency versions
+└── data/                           # Runtime storage (gitignored)
     ├── db/                         # SQLite databases
     ├── media/                      # Downloaded images & video frames
-    └── cookies/                    # Uploaded Cookie JSONs
+    └── cookies/                    # Cookie JSONs (e.g. douyin.json)
 ```
