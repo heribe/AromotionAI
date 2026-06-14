@@ -173,8 +173,13 @@ class AnalysisService:
             recent_n = post_selection.get("recent_n") or post_selection.get("recent_count") or 5
             collect_count = max(20, (top_n + recent_n) * 2)
 
+            # get_blogger_posts 的 web API 需要 sec_user_id（MS4w... 长串），而非
+            # BloggerProfile.platform_uid（数字 uid）。从 profile 响应里取 sec_uid
+            # （profile 内部已处理短链跳转，sec_uid 最可靠），提取不到时回退 platform_uid。
+            _raw_user = (blogger.raw_data or {}).get("user") or {}
+            sec_user_id = _raw_user.get("sec_uid") or blogger.platform_uid
             posts = await collector.get_blogger_posts(
-                blogger.platform_uid, count=collect_count, task_id=task_id
+                sec_user_id, count=collect_count, task_id=task_id
             )
 
             # 暂存入库
