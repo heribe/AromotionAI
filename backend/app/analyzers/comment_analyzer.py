@@ -42,11 +42,11 @@ class CommentAnalyzer(BaseAnalyzer):
         if not comments:
             return fallback
 
-        # 格式化拼接评论文本
+        # 格式化拼接评论文本（兼容字段缺失或为 None 的情况）
         formatted_comments = []
         for idx, comment in enumerate(comments):
-            text = comment.get("text", "").strip()
-            ip_label = comment.get("ip_label", "").strip()
+            text = (comment.get("text") or "").strip()
+            ip_label = (comment.get("ip_label") or "").strip()
             if text:
                 line = f"评论 {idx+1}: {text}"
                 if ip_label:

@@ -9,7 +9,9 @@
   - [x] M3.2: Visual & Comment Analyzers (DONE, tests passed)
   - [x] M3.3: Profile Aggregator (DONE, tests passed)
   - [ ] M3.4: Tests & Integration (PLANNED)
-- [ ] Milestone 4: Task Manager & SSE API (PLANNED)
+- [/] Milestone 4: Task Manager & SSE API (IN_PROGRESS)
+  - [x] M4.1: TaskManager (Memory-based) (DONE, tests passed)
+  - [x] M4.2: AnalysisService (Pipeline Orchestration) (DONE)
 - [ ] Milestone 5: Fragrance Recommend Engine (PLANNED)
 - [ ] Milestone 6: Integration & Final Gate (PLANNED)
 
@@ -27,3 +29,19 @@
   - **实现**: `backend/app/analyzers/profile_aggregator.py` 粉丝画像多维度规则与 AI 聚合生成。
   - **测试**: `backend/tests/test_analyzers.py` 中的 `TestProfileAggregator`，包含正常生成、降级与容错、兼容性测试，全部通过。
   - **状态**: 已完成。
+
+### Milestone 4: Task Manager & SSE API
+- **M4.1: TaskManager (Memory-based)**
+  - **实现**: `backend/app/core/task_manager.py` (TaskManager 以及全局单例 task_manager) 和 `backend/app/api/deps.py` 依赖注入。
+  - **测试**: `backend/tests/test_task_manager.py`，包含基础发布订阅、任务取消安全、多订阅者并发、对称清理校验、异常状态等。
+  - **状态**: 已完成，测试通过。
+- **M4.2: AnalysisService (Pipeline Orchestration)**
+  - **实现**: `backend/app/services/analysis_service.py` 核心管道编排，注入与导出。
+  - **测试**: `backend/tests/test_analysis_service.py`，包含全链路 Mock 管道运行断言，以及步骤异常回滚断言。
+  - **状态**: 已完成，全部 9 个测试 (test_task_manager + test_analysis_service) 通过。
+
+## Known Pre-existing Test Failures (待修复，非本次提交范围)
+> 以下 3 个用例在 `HEAD` 上即失败，与 M4.1/M4.2 无关，需后续单独排查：
+- `tests/test_analyzers.py::TestProfileAggregator::test_aggregate_compatibility`
+- `tests/test_boundary_stress.py::test_preprocess_image_decompression_bomb`
+- `tests/test_douyin_collector.py::test_collect_comments` (json.decoder.JSONDecodeError)
