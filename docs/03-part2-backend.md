@@ -800,7 +800,9 @@ async def _update_session_plans(self, session, updated_plans):
 
 ### 6.1 推荐引擎接口
 
-为了支持后续切换到 Dify/本地 Agent/其他实现，定义统一接口：
+为了支持后续切换到 Dify/本地 Agent/其他实现，定义统一接口。
+**M5 第一版只实现 `PromptFragranceEngine`**；`DifyFragranceEngine` 与 `LocalAgentFragranceEngine`
+不写代码占位类（YAGNI），其接入路径见下方"后续接入说明"。
 
 ```python
 class FragranceEngine(ABC):
@@ -827,29 +829,31 @@ class FragranceEngine(ABC):
 
 
 class PromptFragranceEngine(FragranceEngine):
-    """基于 Prompt 的推荐引擎（第一版）"""
-    ...
-
-class DifyFragranceEngine(FragranceEngine):
-    """基于 Dify 工作流的推荐引擎（预留）"""
-    ...
-
-class LocalAgentFragranceEngine(FragranceEngine):
-    """基于本地 Agent 的推荐引擎（预留）"""
+    """基于 Prompt 的推荐引擎（第一版，M5 实现此类的全部逻辑）"""
     ...
 ```
+
+> **后续接入 Dify 的步骤（不在 M5 范围）**：
+> 1. 在 `app/engines/` 新建 `dify_engine.py`，实现 `DifyFragranceEngine(FragranceEngine)`。
+>    其 `generate` / `chat` 方法内部改为调用 Dify Workflow HTTP API
+>    （如 `POST /v1/workflows/run`），把 `selected_tags` / `history` 作为输入变量传入。
+> 2. 在 `app/engines/__init__.py` 的 `ENGINE_REGISTRY` 注册 `"dify": DifyFragranceEngine`。
+> 3. 在 `app/config.py` 增加 Dify 相关配置（API key、workflow_id）。
+> 4. 通过 `FRAGRANCE_ENGINE` 环境变量切换引擎，无需改动 `FragranceService` 与 API 层。
+>
+> 同理，`LocalAgentFragranceEngine` 接入时只需新增一个 `FragranceEngine` 子类并注册。
 
 ### 6.2 引擎注册与切换
 
 ```python
 # config.py
-FRAGRANCE_ENGINE = "prompt"  # "prompt" | "dify" | "local_agent"
+FRAGRANCE_ENGINE = "prompt"  # "prompt" | "dify"（M5 v1 仅 "prompt" 可用）
 
-# fragrance/__init__.py
+# engines/__init__.py
 ENGINE_REGISTRY = {
     "prompt": PromptFragranceEngine,
-    "dify": DifyFragranceEngine,
-    "local_agent": LocalAgentFragranceEngine,
+    # "dify": DifyFragranceEngine,       # M5 之后接入
+    # "local_agent": LocalAgentFragranceEngine,  # 未来扩展
 }
 
 def get_engine() -> FragranceEngine:
@@ -873,12 +877,27 @@ def get_engine() -> FragranceEngine:
 
 ## 八、待进一步讨论的问题
 
-> [!WARNING]
-> 以下问题需要在开发过程中逐步细化。
+> [!NOTE]
+> 以下问题已在 M5 规划阶段（2026-06-14）逐一对齐并定稿。决策结果直接进入实现，
+> 不再作为开放问题。如需调整，须同步更新本节及 `docs/superpowers/specs/` 下的设计文档。
 
-1. **对话是否需要流式输出** — 当前设计是等待 AI 完整响应后返回。如果方案文字较长（特别是故事部分），是否需要 SSE 流式返回？
-2. **方案生成的温度参数** — 目前设为 0.8，是否需要让调香师可调（"更稳定" vs "更创意"）
-3. **方案的差异化策略** — 如何确保 3 套方案之间有足够的差异？目前通过 Prompt 引导，可能需要更精确的控制
-4. **Prompt 版本管理** — Prompt 模板需要迭代优化，是否需要支持多版本 Prompt 的 A/B 测试
-5. **对话的最大轮次** — 是否需要限制？超过 N 轮后建议重新生成？
-6. **冰山分析的可视化** — 是否需要在前端展示冰山三层分析的文字？还是只展示最终推荐方案？
+1. **对话是否需要流式输出** — **决策（M5 v1）：非流式 JSON 响应。**
+   `/chat` 一次性返回 AI 完整响应。后续若需"打字机效果"，需（a）在 AIRegistry 暴露 `chat_stream` 接口、
+   （b）各 provider 适配器实现 `stream=True`、（c）端点改用 SSE 响应。
+   实现代码中保留 `TODO(streaming)` 标记以便后续切换。
+2. **方案生成的温度参数** — **决策：按场景区分，硬编码。**
+   `/generate` 用 `temperature=0.8`（鼓励创意），`/chat` 用 `temperature=0.6`（逻辑连贯）。
+   第一版不暴露给调香师可调；常量定义于 `app/constants/fragrance.py`，后续可改为请求参数。
+3. **方案的差异化策略** — **决策：显式权重参数。**
+   通过 `blogger_weight` / `audience_weight`（请求体可选，默认 0.5/0.5）控制博主画像与粉丝画像在
+   prompt 中的融合权重。`FragranceService` 在拼接 `ICEBERG_ANALYSIS_PROMPT` 时按权重填充两侧内容。
+   此为**可调参数**，调香师可在前端调整以观察不同侧重下的推荐变化。
+4. **Prompt 版本管理** — **决策：v1 硬编码。**
+   模板作为字符串常量置于 `app/constants/fragrance.py`，文件头标注版本号（如 `PROMPT_VERSION = "v1"`）。
+   不引入 `PromptVersion` 枚举或 DB 表；迭代时在常量文件追加新版本注释与 `git diff` 追溯。
+5. **对话的最大轮次** — **决策：滑动窗口 20。**
+   采用文档既定的 `MAX_HISTORY_MESSAGES=20`。`FragranceService` 在拼装 chat prompt 时保留最近 20 条
+   消息；不额外限制总轮次，调香师可无限对话（超出部分旧消息不进入上下文）。
+6. **冰山分析的可视化** — **决策：后端只返回结构化数据。**
+   `/generate` 响应体携带 `iceberg_analysis`（含三层：表层/中层/深层），后端不关心前端如何渲染。
+   前端是否展示三层文字属前端范畴，后端契约只保证字段存在且 schema 稳定。
