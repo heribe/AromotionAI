@@ -1,10 +1,13 @@
 import pytest
 import os
 import json
+from unittest.mock import patch, AsyncMock
 from app.ai.registry import AIRegistry, ai_registry
 from app.analyzers.base import BaseAnalyzer
 from app.analyzers.visual_analyzer import VisualAnalyzer
 from app.analyzers.comment_analyzer import CommentAnalyzer
+from app.analyzers.profile_aggregator import ProfileAggregator
+from app.models.blogger import BloggerProfile, CommenterProfile
 
 class TestBaseAnalyzer:
     """测试 BaseAnalyzer 基础功能与安全的 JSON 解析器"""
@@ -185,7 +188,185 @@ class TestCommentAnalyzer:
         assert isinstance(res, dict)
         assert res["keyword_stats"] == {}
         
-        # 2. 传入无 text 字段的评论列表
+        # 2. 传入无 text 字段 of 评论列表
         res = await analyzer.analyze_comments([{"ip_label": "北京"}, {"text": "   "}])
         assert isinstance(res, dict)
         assert res["keyword_stats"] == {}
+
+
+class TestProfileAggregator:
+    """测试 ProfileAggregator 聚合流程、容错及兼容性"""
+
+    @pytest.fixture(autouse=True)
+    def setup_mock_env(self):
+        old_mode = os.environ.get("AROMOTION_TEST_MODE")
+        os.environ["AROMOTION_TEST_MODE"] = "mock"
+        yield
+        if old_mode is not None:
+            os.environ["AROMOTION_TEST_MODE"] = old_mode
+        else:
+            del os.environ["AROMOTION_TEST_MODE"]
+
+    @pytest.mark.asyncio
+    async def test_aggregate_success_mocked(self):
+        aggregator = ProfileAggregator()
+        # 模拟真实 AI 返回的完整合法的 JSON
+        mock_res_data = {
+            "climate_consumption": {
+                "climate_zone": {"湿热南方": 40.0, "干燥北方": 30.0, "四季分明": 30.0},
+                "city_tier": {"一线/新一线": 50.0, "二线": 30.0, "三线及以下": 20.0},
+                "culture_circle": {"日韩影响圈": 30.0, "内陆文化圈": 40.0, "港台风影响圈": 30.0},
+                "concentration": "全国分散型",
+                "summary": "气候-消费带总结"
+            },
+            "fragrance_consumption": {
+                "price_tier": {"日常平价": 40.0, "轻奢入门": 30.0, "品质消费": 20.0, "高端消费": 10.0},
+                "purchase_motivation": {"情绪需求": 40.0, "社交需求": 20.0, "身份需求": 10.0, "功能需求": 20.0, "收藏需求": 10.0},
+                "decision_path": {"种草型": 50.0, "做功课型": 20.0, "冲动型": 20.0, "社交触发型": 10.0},
+                "consumption_frequency": {"高频日常": 40.0, "场合驱动": 40.0, "低频尝鲜": 20.0},
+                "summary": "香调消费总结"
+            },
+            "fashion_fragrance_map": {
+                "fashion_style": {"甜美系": 40.0, "古典系": 30.0, "哥特系": 10.0, "国潮系": 10.0, "日常休闲": 10.0},
+                "fashion_scene": {"拍照出片": 40.0, "日常通勤": 20.0, "聚会活动": 20.0, "约会社交": 20.0},
+                "color_preference": {"粉色系": 40.0, "蓝紫系": 20.0, "黑白系": 20.0, "暖色系": 20.0},
+                "fashion_completeness": {"精致": 50.0, "进阶": 20.0, "全套": 20.0, "基础": 10.0},
+                "summary": "穿搭风格总结"
+            },
+            "lifestyle_scenario": {
+                "core_interest": {"亚文化穿搭": 30.0, "日常自拍": 30.0, "二次元": 10.0, "旅行风景": 10.0, "其他": 20.0},
+                "social_activity": {"圈层社交": 40.0, "高频社交": 20.0, "线上为主": 20.0, "独处型": 20.0},
+                "aesthetic_personality": {"冒险型": 30.0, "收藏型": 30.0, "保守型": 20.0, "功能型": 20.0},
+                "fragrance_timing": {"全天": 40.0, "白天为主": 20.0, "傍晚夜间": 20.0, "居家为主": 20.0},
+                "content_consumption": {"种草转化型": 40.0, "深度参与型": 20.0, "情感共鸣型": 20.0, "路人围观型": 20.0},
+                "summary": "生活方式总结"
+            },
+            "overall_summary": "总体总结",
+            "full_report_markdown": "# 完整报告"
+        }
+        
+        provider, model = aggregator._get_provider_for_slot("tag_aggregation")
+        with patch.object(provider, "chat", new_callable=AsyncMock) as mock_chat:
+            mock_chat.return_value = json.dumps(mock_res_data, ensure_ascii=False)
+            
+            blogger_profile = {
+                "task_id": "test-task-123",
+                "nickname": "TestBlogger",
+                "platform": "douyin"
+            }
+            commenters = [
+                {"province": "广东", "city": "广州"},
+                {"province": "北京", "city": "北京"},
+                {"province": "上海", "city": "上海"}
+            ]
+            
+            report = await aggregator.aggregate(
+                blogger_profile=blogger_profile,
+                visual_analysis=[],
+                comment_analysis={},
+                commenter_profiles=commenters,
+                fan_visual_analysis=[]
+            )
+            
+            assert report.task_id == "test-task-123"
+            assert report.id is not None
+            assert report.overall_summary == "总体总结"
+            assert report.full_report_markdown == "# 完整报告"
+            assert report.climate_consumption["climate_zone"]["湿热南方"] == 40.0
+            assert report.climate_consumption["city_tier"]["一线/新一线"] == 50.0
+
+    @pytest.mark.asyncio
+    async def test_aggregate_fallback_garbage(self):
+        aggregator = ProfileAggregator()
+        provider, model = aggregator._get_provider_for_slot("tag_aggregation")
+        
+        with patch.object(provider, "chat", new_callable=AsyncMock) as mock_chat:
+            # 1. 模拟 AI 返回杂乱无章、不合法的非 JSON 字符串（且不包含 "收到您的反馈" 从而避开 mock 模式拦截）
+            mock_chat.return_value = "这里是一些垃圾文本，根本不是 JSON 格式。"
+            
+            blogger_profile = {"task_id": "test-task-fallback"}
+            report = await aggregator.aggregate(
+                blogger_profile=blogger_profile,
+                visual_analysis=[],
+                comment_analysis={},
+                commenter_profiles=[],
+                fan_visual_analysis=[]
+            )
+            
+            assert report.task_id == "test-task-fallback"
+            assert report.overall_summary == "暂无画像报告总体摘要"
+            assert report.climate_consumption["climate_zone"]["湿热南方"] == 0.0
+            assert report.fragrance_consumption["price_tier"]["日常平价"] == 0.0
+
+    @pytest.mark.asyncio
+    async def test_aggregate_fallback_timeout(self):
+        aggregator = ProfileAggregator()
+        provider, model = aggregator._get_provider_for_slot("tag_aggregation")
+        
+        with patch.object(provider, "chat", new_callable=AsyncMock) as mock_chat:
+            # 2. 模拟网络异常或超时抛出异常
+            mock_chat.side_effect = Exception("Connection timeout")
+            
+            blogger_profile = {"task_id": "test-task-timeout"}
+            report = await aggregator.aggregate(
+                blogger_profile=blogger_profile,
+                visual_analysis=[],
+                comment_analysis={},
+                commenter_profiles=[],
+                fan_visual_analysis=[]
+            )
+            
+            assert report.task_id == "test-task-timeout"
+            assert report.overall_summary == "暂无画像报告总体摘要"
+            assert report.climate_consumption["summary"] == "暂无气候-消费带分析摘要"
+
+    @pytest.mark.asyncio
+    async def test_aggregate_compatibility(self):
+        aggregator = ProfileAggregator()
+        
+        # 模拟 SQLAlchemy model 实例
+        blogger_model = BloggerProfile(
+            task_id="model-task-111",
+            nickname="ModelBlogger",
+            gender="女",
+            age="25",
+            province="广东省",
+            city="广州市",
+            follower_count=100000,
+            platform="douyin",
+            platform_uid="123456",
+            raw_data={}
+        )
+        
+        commenter_models = [
+            CommenterProfile(
+                task_id="model-task-111",
+                platform_uid="c1",
+                nickname="Fan1",
+                province="广东省",
+                city="深圳市",
+                raw_data={}
+            ),
+            CommenterProfile(
+                task_id="model-task-111",
+                platform_uid="c2",
+                nickname="Fan2",
+                province="北京市",
+                city="北京市",
+                raw_data={}
+            )
+        ]
+        
+        # 兼容性测试，在 mock 模式下直接调用，验证提取逻辑
+        report = await aggregator.aggregate(
+            blogger_profile=blogger_model,
+            visual_analysis=[],
+            comment_analysis={},
+            commenter_profiles=commenter_models,
+            fan_visual_analysis=[]
+        )
+        
+        assert report.task_id == "model-task-111"
+        assert report.overall_summary is not None
+        assert report.climate_consumption["climate_zone"]["湿热南方"] is not None
+
