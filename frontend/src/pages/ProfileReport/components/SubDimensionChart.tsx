@@ -28,14 +28,14 @@ export const SubDimensionChart: React.FC<SubDimensionChartProps> = ({ sub }) => 
 
       {/* 饼图 → 水平条形可视化（更紧凑、信息密度更高） */}
       {(sub.chartType === 'pie') && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {sub.data.map((item, i) => (
             <div key={item.name}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
                 <Text style={{ fontSize: 13, color: 'var(--text-primary)' }}>{item.name}</Text>
                 <Text style={{ fontSize: 13, color: 'var(--accent-amber)', fontFamily: 'var(--font-serif)' }}>{item.value}%</Text>
               </div>
-              <div style={{ height: 6, background: 'var(--border-line)', borderRadius: 1, overflow: 'hidden' }}>
+              <div style={{ height: 10, background: 'var(--border-line)', borderRadius: 1, overflow: 'hidden' }}>
                 <div style={{
                   width: `${item.value}%`,
                   height: '100%',
@@ -49,13 +49,16 @@ export const SubDimensionChart: React.FC<SubDimensionChartProps> = ({ sub }) => 
         </div>
       )}
 
-      {/* 柱状图 → 水平柱状条 */}
+      {/* 柱状图 → 水平柱状条（上下布局，与 pie/radar 统一） */}
       {sub.chartType === 'bar' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {sub.data.map((item, i) => (
-            <div key={item.name} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <Text style={{ fontSize: 12, color: 'var(--text-secondary)', minWidth: 80, textAlign: 'right', flexShrink: 0 }}>{item.name}</Text>
-              <div style={{ flex: 1, height: 16, background: 'var(--border-line)', borderRadius: 1, overflow: 'hidden', position: 'relative' }}>
+            <div key={item.name}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                <Text style={{ fontSize: 13, color: 'var(--text-primary)' }}>{item.name}</Text>
+                <Text style={{ fontSize: 13, color: 'var(--accent-amber)', fontFamily: 'var(--font-serif)' }}>{item.value}%</Text>
+              </div>
+              <div style={{ height: 10, background: 'var(--border-line)', borderRadius: 1, overflow: 'hidden', position: 'relative' }}>
                 <div style={{
                   width: `${(item.value / maxValue) * 100}%`,
                   height: '100%',
@@ -64,7 +67,6 @@ export const SubDimensionChart: React.FC<SubDimensionChartProps> = ({ sub }) => 
                   transition: 'width 0.6s ease',
                 }} />
               </div>
-              <Text style={{ fontSize: 12, color: 'var(--accent-amber)', fontFamily: 'var(--font-serif)', minWidth: 32, textAlign: 'right' }}>{item.value}%</Text>
             </div>
           ))}
         </div>
@@ -75,11 +77,11 @@ export const SubDimensionChart: React.FC<SubDimensionChartProps> = ({ sub }) => 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {sub.data.map((item, i) => (
             <div key={item.name}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
-                <Text style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{item.name}</Text>
-                <Text style={{ fontSize: 12, color: 'var(--accent-amber)', fontFamily: 'var(--font-serif)' }}>{item.value}</Text>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                <Text style={{ fontSize: 13, color: 'var(--text-primary)' }}>{item.name}</Text>
+                <Text style={{ fontSize: 13, color: 'var(--accent-amber)', fontFamily: 'var(--font-serif)' }}>{item.value}</Text>
               </div>
-              <div style={{ height: 8, background: 'var(--border-line)', borderRadius: 1, overflow: 'hidden' }}>
+              <div style={{ height: 10, background: 'var(--border-line)', borderRadius: 1, overflow: 'hidden' }}>
                 <div style={{
                   width: `${item.value}%`,
                   height: '100%',
