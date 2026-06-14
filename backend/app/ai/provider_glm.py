@@ -45,10 +45,15 @@ class GLMProvider(AIProvider):
         parts: list[str] = []
         async with httpx.AsyncClient(timeout=180.0) as client:
             async with client.stream("POST", url, headers=headers, json=payload) as response:
-                # 流式下错误响应体仍需读取后再抛出，否则 raise_for_status 拿不到 body
+                # 流式下错误响应体需先读取，再抛出携带 body 的 HTTPStatusError
+                # （httpx 的 Response 没有 _raise_for_status(body) 方法，早期实现是 bug）
                 if response.status_code >= 400:
                     body = await response.aread()
-                    response._raise_for_status(body)  # noqa: SLF001
+                    raise httpx.HTTPStatusError(
+                        f"HTTP {response.status_code}: {body.decode('utf-8', errors='replace')[:500]}",
+                        request=response.request,
+                        response=response,
+                    )
                 async for line in response.aiter_lines():
                     if not line or not line.startswith("data:"):
                         continue

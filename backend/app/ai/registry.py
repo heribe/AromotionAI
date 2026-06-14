@@ -21,7 +21,8 @@ class AIRegistry:
         # 模型名可通过环境变量配置，以适配不同套餐。
         # 未配置时默认使用 glm-5.2（Coding Plan）；标准套餐可设 GLM_MODEL=glm-4。
         _glm_text_model = os.getenv("GLM_MODEL", "glm-5.2")
-        _glm_vision_model = os.getenv("GLM_VISION_MODEL", _glm_text_model)
+        # 视觉槽位必须用支持多模态的 glm-4.6v（glm-5.2 是纯文本模型，不支持 vision）
+        _glm_vision_model = os.getenv("GLM_VISION_MODEL", "glm-4.6v")
 
         # 默认 Slot 绑定
         # 槽位包含: visual_analysis, comment_analysis, tag_aggregation, fragrance_reasoning, fragrance_chat, analysis_task

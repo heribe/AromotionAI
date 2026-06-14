@@ -58,7 +58,7 @@ class TestAIRegistrySlotBinding:
         # 验证默认绑定的槽位映射。
         # 默认 model 由环境变量 GLM_MODEL / GLM_VISION_MODEL 控制，未配置时回退 glm-5.2。
         expected_bindings = {
-            "visual_analysis": ("glm", "glm-5.2"),
+            "visual_analysis": ("glm", "glm-4.6v"),
             "comment_analysis": ("glm", "glm-5.2"),
             "tag_aggregation": ("glm", "glm-5.2"),
             "fragrance_reasoning": ("glm", "glm-5.2"),
