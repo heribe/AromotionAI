@@ -328,13 +328,18 @@ Part2: 香调推荐 (处于进行中任务列表)
 | `GET` | `/api/v1/cookies/status` | 查询 Cookie 有效性 |
 | `DELETE` | `/api/v1/cookies/{platform}` | 删除指定平台 Cookie |
 
-#### 系统配置
+#### 系统配置（未实现 · 规划中）
 
-| 方法 | 路径 | 说明 |
-|---|---|---|
-| `GET` | `/api/v1/config/analysis-levels` | 获取分析等级配置 |
-| `GET` | `/api/v1/config/ai-providers` | 获取可用 AI 模型列表 |
-| `PUT` | `/api/v1/config/ai-providers` | 更新 AI 模型配置 |
+> [!NOTE]
+> 以下端点为**未来规划**，当前后端未实现（`app/api/v1/` 无 config 路由模块）。
+> 分析等级预设与 AI 槽位绑定目前硬编码在代码中（`DEFAULT_CONFIGS` / `AI_SLOT_BINDINGS`），
+> 这些端点的目的是将硬编码配置提升为运行时可查询/可修改的 HTTP 接口。详见 §十四 规划项 #9。
+
+| 方法 | 路径 | 说明 | 状态 |
+|---|---|---|---|
+| `GET` | `/api/v1/config/analysis-levels` | 获取分析等级配置 | 🔲 未实现 |
+| `GET` | `/api/v1/config/ai-providers` | 获取可用 AI 模型列表 | 🔲 未实现 |
+| `PUT` | `/api/v1/config/ai-providers` | 更新 AI 模型配置（运行时热切换 AI 路由） | 🔲 未实现 |
 
 ---
 
@@ -1031,3 +1036,27 @@ docs: 更新 API 文档
 | 5 | 冰山理论的探索方向建议 | Part2 后端 | 低 |
 | 7 | 多博主对比功能的数据结构设计 | 全局 | 低（预留） |
 | 8 | 是否需要支持调香师自定义标签（不在预设体系内） | Part1 前端 | 中 |
+| 9 | **系统配置（config）模块实现** | 全局 §4.2 | 低（未来规划） |
+
+### 规划项 #9：系统配置（config）模块
+
+**背景**：§4.2 系统配置表规划的 3 个端点（`GET /config/analysis-levels`、`GET/PUT /config/ai-providers`）当前后端未实现。M6 e2e 改造时发现此缺口（详见 `PROGRESS.md` M6 决策记录）。
+
+**现状**：
+- 分析等级预设（quick/standard/deep）硬编码在 `app/services/analysis_service.py` 的 `DEFAULT_CONFIGS`
+- AI 槽位绑定（§7.1 五个槽位）硬编码在 `app/ai/registry.py` 的 `AI_SLOT_BINDINGS`
+- 两者均无 HTTP 接口暴露，前端无法动态获取，管理员无法运行时切换
+
+**规划目标**：
+- 新建 `app/api/v1/config.py`，实现 3 个端点并注册到 router
+- 预设等级端点为只读查询；ai-providers 的 PUT 支持运行时热切换 AI 路由
+- 可选：配套管理后台页面（可视化调模型/调档位）
+
+**触发条件**（满足任一即应启动）：
+- 需要做管理后台，让运营人员可视化配置
+- 需要 A/B 测试不同 AI 模型效果（如 fragrance_reasoning 试 DeepSeek vs GLM）
+- 预设档位需要在不重启服务的情况下调整
+
+**当前处理**：
+- `tests/e2e/test_f7_config.py` 全 10 用例已 `pytestmark skip`，待模块实现后解除
+- M6 测试基线：65 passed + 10 skipped（F7）

@@ -129,7 +129,11 @@ app 集成测试。
   - **如何验证**：(1) 重写 mock 以匹配当前 `collect_comments` 的实际调用链；或 (2) 在拥有有效抖音 Cookie + 网络访问的环境下手动运行。
   - **优先级**：M5/M6 阶段统一处理真实网络集成测试时一并修复。
 
-### ⚠️ 待实现：F7 config 端点模块（10 用例 skip）
-- `tests/e2e/test_f7_config.py` 全部
-  - **原因**：真实 app 未实现 `/api/v1/config/*` 路由模块（presets/ai-providers/routing/status）。
-  - **如何解除**：新建 `app/api/v1/config.py` 实现 6 个端点并注册到 router，解除 pytestmark skip。
+### 🔲 未来规划：config 系统配置模块（10 用例 skip）
+
+> 产品规划详见 `docs/00-global-dev-guide.md` §十四 规划项 #9。
+
+- `tests/e2e/test_f7_config.py` 全部 10 用例已 `pytestmark skip`
+- **本质**：文档 §4.2 规划的 3 个端点（`GET /config/analysis-levels`、`GET/PUT /config/ai-providers`）从未实现，目的是把硬编码的分析等级预设（`DEFAULT_CONFIGS`）和 AI 槽位绑定（`AI_SLOT_BINDINGS`）提升为运行时可查询/可修改的 HTTP 接口
+- **触发条件**：需要管理后台 / A/B 测试不同模型 / 运行时调整档位（任一满足）
+- **如何解除 skip**：新建 `app/api/v1/config.py` 实现 3 个端点并注册到 router，删除 `test_f7_config.py` 顶部的 `pytestmark` 行
