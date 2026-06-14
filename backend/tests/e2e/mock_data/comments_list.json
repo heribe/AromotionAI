@@ -1,0 +1,57 @@
+[
+  {
+    "cid": "comment_1",
+    "text": "这套粉色洛丽塔小裙子也太甜了吧！求求链接！",
+    "digg_count": 128,
+    "create_time": 1780000000,
+    "user": {
+      "uid": "fan_1",
+      "nickname": "粉色甜心",
+      "avatar_url": "https://avatar.url/1"
+    }
+  },
+  {
+    "cid": "comment_2",
+    "text": "前调是甜美花香，非常适合约会，想知道博主喷的是哪款香水？",
+    "digg_count": 89,
+    "create_time": 1780000050,
+    "user": {
+      "uid": "fan_2",
+      "nickname": "茉莉红茶",
+      "avatar_url": "https://avatar.url/2"
+    }
+  },
+  {
+    "cid": "comment_3",
+    "text": "每次去漫展穿这一身，妥妥的焦点，太出片了！",
+    "digg_count": 64,
+    "create_time": 1780000100,
+    "user": {
+      "uid": "fan_3",
+      "nickname": "二次元少女",
+      "avatar_url": "https://avatar.url/3"
+    }
+  },
+  {
+    "cid": "comment_4",
+    "text": "喜欢博主这种古典雅致的搭配，有种温婉的气质。",
+    "digg_count": 45,
+    "create_time": 1780000150,
+    "user": {
+      "uid": "fan_4",
+      "nickname": "青黛",
+      "avatar_url": "https://avatar.url/4"
+    }
+  },
+  {
+    "cid": "comment_5",
+    "text": "衣服很好看，但是平时通勤穿稍微有点夸张了，有日常一些的推荐吗？",
+    "digg_count": 32,
+    "create_time": 1780000200,
+    "user": {
+      "uid": "fan_5",
+      "nickname": "小月亮",
+      "avatar_url": "https://avatar.url/5"
+    }
+  }
+]
