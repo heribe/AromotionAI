@@ -4,12 +4,12 @@
 - [x] Milestone E2E: E2E Testing Suite (DONE)
 - [x] Milestone 1: Infrastructure & Cookie Mgmt (DONE)
 - [x] Milestone 2: Data Collection & Media Proc (DONE)
-- [/] Milestone 3: AI Analyzers & Profile Agg (IN_PROGRESS)
+- [x] Milestone 3: AI Analyzers & Profile Agg (DONE)
   - [x] M3.1: AI Registry (DONE, tests passed)
   - [x] M3.2: Visual & Comment Analyzers (DONE, tests passed)
   - [x] M3.3: Profile Aggregator (DONE, tests passed)
-  - [ ] M3.4: Tests & Integration (PLANNED)
-- [/] Milestone 4: Task Manager & SSE API (IN_PROGRESS)
+  - [x] M3.4: Tests & Integration (DONE, 由 test_analyzers.py 覆盖)
+- [x] Milestone 4: Task Manager & SSE API (DONE)
   - [x] M4.1: TaskManager (Memory-based) (DONE, tests passed)
   - [x] M4.2: AnalysisService (Pipeline Orchestration) (DONE)
   - [x] M4.3: Analysis REST + SSE API (DONE, 23 tests passed)
@@ -18,7 +18,14 @@
   - [x] M5.1: FragranceEngine ABC + PromptFragranceEngine (DONE, 20 service tests passed)
   - [x] M5.2: FragranceService 业务编排 (DONE)
   - [x] M5.3: Fragrance REST API 5 端点 (DONE, 15 API tests passed)
-- [ ] Milestone 6: Integration & Final Gate (PLANNED)
+- [/] Milestone 6: Integration & Final Gate (IN_PROGRESS)
+  - [x] M6.1: e2e 基础设施改造（stub→真实 app，httpx 兼容性修复）(DONE)
+  - [x] M6.2: F1 Cookies e2e 改造 (DONE, 9 用例全绿)
+  - [ ] M6.3: F2/F3 Analysis e2e 改造 (IN_PROGRESS)
+  - [ ] M6.4: F4 Reports/Tags/Delete e2e 改造 (PLANNED)
+  - [ ] M6.5: F5/F6 Fragrance e2e 改造 (PLANNED)
+  - [ ] M6.6: Tier3/Tier4 复杂场景 e2e 改造 (PLANNED)
+  - [ ] M6.7: 对抗性测试加固 + 收尾 (PLANNED)
 
 ## Detailed Status
 ### Milestone 5: Fragrance Recommend Engine
@@ -65,19 +72,40 @@
   - **实现**: 与 M4.3 一并交付；DELETE 任务时清理 covers/avatars/grids 媒体；tags 端点按 §9.2 处理互斥标签组。
   - **状态**: 已完成。
 
-## Known Pre-existing Test Failures (待修复，非本次提交范围)
-> ~~以下 3 个用例在 `HEAD` 上即失败，与 M4.1/M4.2 无关，需后续单独排查：~~
-> **2026-06-14 已修复**：3 个用例全部处理完成（2 修复 + 1 跳过）。
-> 单元测试整体结果：**98 passed, 1 skipped, 0 failed**。
+## M6 e2e 改造决策记录（2026-06-14）
+
+### 背景
+原 `tests/e2e/conftest.py` 是一个 930 行的**独立 stub FastAPI app**（内存字典模拟全部端点），
+82 个 e2e 用例验证的是"stub 是否符合契约"，**完全不接触真实 `app/` 包**。M6 将其改造为真实
+app 集成测试。
+
+### 改造策略
+- `client` fixture 改用 `httpx.ASGITransport(app=app)` 挂载真实 `app.main:app`（同时修复
+  httpx 兼容性问题：旧版 `httpx.AsyncClient(app=app)` 已废弃）
+- `AROMOTION_TEST_MODE=mock` 让 collector/media/analyzer/AI 全走离线分支，
+  真实 `AnalysisService.run_analysis` 可在测试环境离线跑完到 completed
+- 通过 `dependency_overrides` 注入 `MockFragranceEngine`，业务逻辑照常跑
+- helper（`_seed_completed_task_with_report` / `MockFragranceEngine` / `_parse_sse_events` 等）
+  统一提炼到 `tests/e2e/conftest.py`
+
+### 范围决策
+1. **F7 config 端点族（11 用例）从 M6 剥离**：真实 app 无 `/api/v1/config/*` 路由模块，
+   标记为待实现，暂跳过。
+2. **删除语义不成立的用例**（与真实架构设计冲突）：
+   - 运行中删 cookie/task 期望触发失败（真实禁止删运行中任务、pipeline 不中途检查 cookie）
+   - chat SSE 流式（真实无此能力）
+3. **文案断言对齐真实实现**（不改 production 代码）
+
+### 删除/降级用例清单（M6 过程中逐步记录）
+- `tests/e2e/test_f1_cookies.py::test_f1_expired_cookie_detection` —— 删除
+  （依赖 stub 内部状态 + 不存在的 `/cookies/validate/{platform}` 端点；校验逻辑已由
+  `tests/test_cookie_service.py` 覆盖）
+
+## Known Pre-existing Test Failures
+> 单元测试整体结果：**155 passed, 1 skipped, 0 failed**（M5 收尾基线）。
 
 ### ⚠️ 待人工测试（已标记 @pytest.mark.skip）
 - `tests/test_douyin_collector.py::test_collect_comments`
   - **原因**：Playwright mock 链路与实际 collector 代码已漂移，fallback 到 curl_cffi 时会发起**真实抖音 API 请求**。
   - **如何验证**：(1) 重写 mock 以匹配当前 `collect_comments` 的实际调用链；或 (2) 在拥有有效抖音 Cookie + 网络访问的环境下手动运行。
   - **优先级**：M5/M6 阶段统一处理真实网络集成测试时一并修复。
-
-### ⚠️ e2e 测试套件 httpx 兼容性问题（待修复，非本次提交范围）
-- **现象**：`tests/e2e/` 下 82 个用例在 setup 阶段全部报错 `TypeError: AsyncClient.__init__() got an unexpected keyword argument 'app'`。
-- **原因**：`tests/e2e/conftest.py:930` 使用 `httpx.AsyncClient(app=app, ...)`，该参数在新版 httpx 中已废弃（应改用 `httpx.ASGITransport(app=app)`）。
-- **影响范围**：仅 e2e 测试，不影响单元测试（133 passed, 1 skipped）。
-- **优先级**：M6 阶段统一修复 e2e 测试基础设施时处理。
