@@ -8,11 +8,17 @@ R2 Three-Question Self-Check:
 """
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from dotenv import load_dotenv
 from pathlib import Path
 
 # Git Worktree compatibility: resolve path dynamically relative to file location
 _BASE_DIR = Path(__file__).resolve().parent.parent
 _ENV_FILE = _BASE_DIR / ".env"
+
+# 将 .env 注入进程环境变量，使 AI provider 通过 os.getenv 读取的密钥生效。
+# （pydantic-settings 只填充 Settings 实例，不会写入 os.environ；而 provider
+# 在 app.ai 模块导入时即用 os.getenv 取 key，必须在 Settings 实例化前加载。）
+load_dotenv(_ENV_FILE)
 
 class Settings(BaseSettings):
     APP_NAME: str = "AromotionAI"

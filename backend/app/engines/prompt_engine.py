@@ -33,8 +33,8 @@ PROMPT_VERSION = "v1"
 TEMPERATURE_GENERATE = 0.8  # 创意生成用较高温度
 TEMPERATURE_CHAT = 0.6      # 对话保持逻辑连贯
 MAX_HISTORY_MESSAGES = 20   # 聊天历史滑窗（§八.5 决策）
-MAX_TOKENS_GENERATE = 4096
-MAX_TOKENS_CHAT = 4096
+MAX_TOKENS_GENERATE = 65536
+MAX_TOKENS_CHAT = 65536
 
 SLOT_GENERATE = "fragrance_reasoning"
 SLOT_CHAT = "fragrance_chat"
@@ -85,7 +85,7 @@ ICEBERG_ANALYSIS_PROMPT = """你是一位资深的香水行业顾问，擅长通
       "name": "方案名称",
       "category": "香调大类",
       "top_notes": [
-        {{"name": "香材名", "description": "简短描述", "reason": "推荐理由"}}
+        {"name": "香材名", "description": "简短描述", "reason": "推荐理由"}
       ],
       "middle_notes": [...],
       "base_notes": [...],
@@ -166,15 +166,19 @@ class PromptFragranceEngine(BaseAnalyzer, FragranceEngine):
         selected_tags: dict,
         plan_count: int = 3,
     ) -> dict:
-        prompt = ICEBERG_ANALYSIS_PROMPT.format(
-            fused_profile=fused_profile or "（无画像数据）",
-            selected_tags_formatted=self._format_tags(selected_tags),
-            plan_count=plan_count,
+        # 使用 replace 插值：模板内嵌 JSON 示例含字面量花括号，若用 .format()
+        # 会被误解析为占位符（KeyError）。改用 replace 仅替换真正的占位符。
+        prompt = (
+            ICEBERG_ANALYSIS_PROMPT
+            .replace("{fused_profile}", fused_profile or "（无画像数据）")
+            .replace("{selected_tags_formatted}", self._format_tags(selected_tags))
+            .replace("{plan_count}", str(plan_count))
         )
 
-        provider, _model = self._get_provider_for_slot(SLOT_GENERATE)
+        provider, model = self._get_provider_for_slot(SLOT_GENERATE)
         raw = await provider.chat(
             messages=[{"role": "user", "content": prompt}],
+            model=model,
             temperature=TEMPERATURE_GENERATE,
             max_tokens=MAX_TOKENS_GENERATE,
         )
@@ -212,9 +216,10 @@ class PromptFragranceEngine(BaseAnalyzer, FragranceEngine):
         messages.extend(recent)
         messages.append({"role": "user", "content": user_message})
 
-        provider, _model = self._get_provider_for_slot(SLOT_CHAT)
+        provider, model = self._get_provider_for_slot(SLOT_CHAT)
         raw = await provider.chat(
             messages=messages,
+            model=model,
             temperature=TEMPERATURE_CHAT,
             max_tokens=MAX_TOKENS_CHAT,
         )

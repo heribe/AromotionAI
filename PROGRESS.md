@@ -81,3 +81,41 @@
 - **原因**：`tests/e2e/conftest.py:930` 使用 `httpx.AsyncClient(app=app, ...)`，该参数在新版 httpx 中已废弃（应改用 `httpx.ASGITransport(app=app)`）。
 - **影响范围**：仅 e2e 测试，不影响单元测试（133 passed, 1 skipped）。
 - **优先级**：M6 阶段统一修复 e2e 测试基础设施时处理。
+
+## L1/L3 端到端验证（2026-06-14，提前于 M6）
+
+在 M6 集成前对后端做分层端到端验证（L1 骨架 + L3 含 AI 主流程），发现并修复了
+**6 个单测盲区问题**——单测全绿但真实链路一跑就炸，印证"单测绿 ≠ 端到端通"。
+
+### 验证结果
+- **L1 骨架**：服务启动 / 自动建表(9 表) / 17 路由注册 / `/health` / `/docs` /
+  `cookies/status` / `analysis/list` 全部 200，零报错。
+- **L3 含 AI 主流程**：`FragranceService.generate` 真实调用 GLM（Coding Plan, glm-5.2），
+  成功生成 2 套香调推荐方案（冰山三层分析 + 前/中/后调香材 + 推荐理由 + 创作故事），
+  session 与初始 assistant 消息持久化，`STATUS=completed`。
+- **单测回归**：修复后 **155 passed / 1 skipped / 0 failed**
+  （e2e 82 errors 为预存 httpx 问题，非本次改动）。
+
+### 发现并修复的问题（均为单测盲区）
+| # | 现象 | 根因 | 修复 | 文件 |
+|---|------|------|------|------|
+| 1 | provider 读不到 key | config 未把 `.env` 注入 `os.environ` | 加 `load_dotenv(_ENV_FILE)` | app/config.py |
+| 2 | 429（套餐不匹配） | 默认 `/paas/v4`+glm-4，实际为 Coding Plan | `.env` 设 `ZHIPUAI_BASE_URL`；registry 默认改 glm-5.2 | .env / app/ai/registry.py |
+| 3 | `NameError: os` | registry 改读 env 后漏 import | 补 `import os` | app/ai/registry.py |
+| 4 | `KeyError`（prompt 构造炸） | ICEBERG 模板内 JSON 花括号被 `.format()` 误解析为占位符 | 改用 `str.replace` 插值 | app/engines/prompt_engine.py |
+| 5 | 429（model 错） | engine 未把 slot model 传给 `provider.chat`，默认 glm-4 被 coding 拒 | engine 传 `model=` 给 provider.chat | app/engines/prompt_engine.py |
+| 6 | `ReadTimeout` | 非流式 + timeout 60s，thinking 长生成超时 | provider 改流式 `_stream_completion`（`stream=True` 累积 content） | app/ai/provider_glm.py |
+
+**核心教训**：M5 单测 mock 了 engine/provider，绕过了真实 `.format()`、model 传参与网络延迟，
+导致 #4/#5/#6 藏在盲区。这正是 M6 端到端集成验证的价值所在。
+
+### 附带配置变更
+- `MAX_TOKENS_GENERATE` / `MAX_TOKENS_CHAT`：4096 → **65536**（给 thinking + 长输出留余量）。
+- registry 模型默认值改为可配置：`GLM_MODEL` / `GLM_VISION_MODEL` 环境变量，未配置时默认 glm-5.2。
+- 同步更新 `tests/test_ai_providers.py::test_default_slot_bindings` 的默认 model 断言为 glm-5.2。
+
+### 遗留（M6 范围）
+- 前端可见的 SSE 流式输出：当前 provider 流式为内部累积（`chat` 仍返回完整 str），
+  若需前端实时显示生成过程，需 provider 暴露 `chat_stream` + engine/service/API 全链路透传
+  （`prompt_engine.py` 顶部注释已规划）。
+- e2e 套件 httpx 兼容性（`AsyncClient(app=)` → `ASGITransport`），82 errors 待统一修复。

@@ -1,3 +1,4 @@
+import os
 import threading
 from .base import AIProvider
 from .provider_glm import GLMProvider
@@ -17,14 +18,19 @@ class AIRegistry:
         self.register_provider("openai", OpenAIProvider())
         self.register_provider("deepseek", DeepSeekProvider())
 
+        # 模型名可通过环境变量配置，以适配不同套餐。
+        # 未配置时默认使用 glm-5.2（Coding Plan）；标准套餐可设 GLM_MODEL=glm-4。
+        _glm_text_model = os.getenv("GLM_MODEL", "glm-5.2")
+        _glm_vision_model = os.getenv("GLM_VISION_MODEL", _glm_text_model)
+
         # 默认 Slot 绑定
         # 槽位包含: visual_analysis, comment_analysis, tag_aggregation, fragrance_reasoning, fragrance_chat, analysis_task
-        self.bind_slot("visual_analysis", "glm", "glm-4v")
-        self.bind_slot("comment_analysis", "glm", "glm-4")
-        self.bind_slot("tag_aggregation", "glm", "glm-4")
-        self.bind_slot("fragrance_reasoning", "glm", "glm-4")
-        self.bind_slot("fragrance_chat", "glm", "glm-4")
-        self.bind_slot("analysis_task", "glm", "glm-4")
+        self.bind_slot("visual_analysis", "glm", _glm_vision_model)
+        self.bind_slot("comment_analysis", "glm", _glm_text_model)
+        self.bind_slot("tag_aggregation", "glm", _glm_text_model)
+        self.bind_slot("fragrance_reasoning", "glm", _glm_text_model)
+        self.bind_slot("fragrance_chat", "glm", _glm_text_model)
+        self.bind_slot("analysis_task", "glm", _glm_text_model)
 
     def register_provider(self, name: str, provider: AIProvider) -> None:
         """注册 AI 提供者"""

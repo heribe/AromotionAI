@@ -55,14 +55,15 @@ class TestAIRegistrySlotBinding:
     def test_default_slot_bindings(self):
         registry = AIRegistry()
         
-        # 验证默认绑定的槽位映射
+        # 验证默认绑定的槽位映射。
+        # 默认 model 由环境变量 GLM_MODEL / GLM_VISION_MODEL 控制，未配置时回退 glm-5.2。
         expected_bindings = {
-            "visual_analysis": ("glm", "glm-4v"),
-            "comment_analysis": ("glm", "glm-4"),
-            "tag_aggregation": ("glm", "glm-4"),
-            "fragrance_reasoning": ("glm", "glm-4"),
-            "fragrance_chat": ("glm", "glm-4"),
-            "analysis_task": ("glm", "glm-4"),
+            "visual_analysis": ("glm", "glm-5.2"),
+            "comment_analysis": ("glm", "glm-5.2"),
+            "tag_aggregation": ("glm", "glm-5.2"),
+            "fragrance_reasoning": ("glm", "glm-5.2"),
+            "fragrance_chat": ("glm", "glm-5.2"),
+            "analysis_task": ("glm", "glm-5.2"),
         }
 
         for slot_id, (expected_prov, expected_model) in expected_bindings.items():
