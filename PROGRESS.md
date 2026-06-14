@@ -6,7 +6,7 @@
 - [x] Milestone 2: Data Collection & Media Proc (DONE)
 - [/] Milestone 3: AI Analyzers & Profile Agg (IN_PROGRESS)
   - [x] M3.1: AI Registry (DONE, tests passed)
-  - [ ] M3.2: Visual & Comment Analyzers (PLANNED)
+  - [x] M3.2: Visual & Comment Analyzers (DONE, tests passed)
   - [ ] M3.3: Profile Aggregator (PLANNED)
   - [ ] M3.4: Tests & Integration (PLANNED)
 - [ ] Milestone 4: Task Manager & SSE API (PLANNED)
@@ -20,4 +20,7 @@
   - **测试**: `backend/tests/test_ai_providers.py`，全部 9 个用例通过。
   - **状态**: 已完成 (Commit pending)。
 - **M3.2: Visual & Comment Analyzers**
-  - **状态**: 待启动。
+  - **实现**: `backend/app/analyzers/` 中的 `base.py`, `visual_analyzer.py`, `comment_analyzer.py` 以及其导入包配置。
+  - **测试**: `backend/tests/test_analyzers.py`，全部 11 个用例通过。
+  - **状态**: 已完成 (Commit pending)。
+
