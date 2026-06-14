@@ -173,3 +173,36 @@ app 集成测试。
 - 前端可见的 SSE 流式输出：当前 provider 流式为内部累积（`chat` 仍返回完整 str），
   若需前端实时显示生成过程，需 provider 暴露 `chat_stream` + engine/service/API 全链路透传
   （`prompt_engine.py` 顶部注释已规划）。
+
+## L4 端到端验证（2026-06-14~15，完整业务闭环）
+
+在 L1/L3 基础上，对完整「采集→分析→聚合→推荐」业务闭环做了真实端到端验证
+（真实抖音数据 + 真实 AI），又发现并修复了 4 个单测盲区问题。至此完整业务链路
+第一次真实跑通。
+
+### 验证结果（真实抖音博主，端到端）
+- **采集**：curl_cffi 拿 profile（29.9 万粉）+ 23 posts；playwright 拿评论（含真实
+  `ip_label` IP 属地）。
+- **分析**：glm-4.6v 视觉（封面 + 评论者头像网格）+ glm-5.2 评论语义。
+- **聚合**：ProfileReport 4 维度（地域基于真实 ip_label，不再 random）。
+- **推荐**：fragrance generate 生成 2 套香调方案（冰山分析 + 前/中/后调 + 理由）。
+- **完整闭环**：采集 → 分析 → 聚合 → 香调推荐，task 流转 `completed/100`。
+
+### 发现并修复的问题（均为单测盲区，续编号 7-10）
+| # | 现象 | 根因 | 修复 | 文件 |
+|---|------|------|------|------|
+| 7 | posts 永远空（0 条） | AnalysisService 给 `get_blogger_posts` 传了数字 uid，但该接口的抖音 API 要 sec_user_id | 从 profile 响应 `raw_data.user.sec_uid` 取 sec_user_id 传入 | app/services/analysis_service.py |
+| 8 | task 永远卡 `collecting/5` | `run_analysis` 经 `task_manager.submit` 后台异步执行，却复用 create 请求级 session（请求结束 `get_db` 即 close） | `run_analysis` 开头创建独立 `SessionLocal` + `finally` 关闭 | app/services/analysis_service.py |
+| 9 | 视觉段全空 fallback（误判"通过"） | glm-5.2 纯文本不支持 vision，被 `visual_analyzer` 的 `except→fallback` + parse 失败 fallback 双重掩盖；顺带 provider 流式错误处理调用不存在的 `_raise_for_status` | 视觉槽位改 glm-4.6v；provider 错误处理改为构造 `HTTPStatusError` | app/ai/registry.py / provider_glm.py |
+| 10 | 粉丝地域是 random 假数据 | CommenterProfile 的 province/city/gender/age 用 random（抖音评论 API 不返回），而评论自带的 `ip_label` 没被利用 | province 用评论 `ip_label`（真实 IP 属地）；gender/age 留 None；`analyze_grid` prompt 动态描述行列与 `create_grid_image` 一致 | app/services/analysis_service.py / visual_analyzer.py |
+
+### 附带
+- 安装 playwright chromium 浏览器（评论采集主通道所需，~294MB）。
+- cookie 灌 DB（`platform_cookies` 表），采集器走 DB 分支（完整业务链路必经）。
+- `.gitignore` 加 `cookies.json`（保护敏感凭据）。
+- 视觉槽位默认模型由 glm-5.2 更正为 **glm-4.6v**（覆盖 L1/L3 段 #2 的临时默认）。
+
+### 结论
+后端代码基本写完，且经此验证**真实可跑**。本次 session 累计修复 **10 个单测盲区问题**
+（L1/L3 的 #1-6 + L4 的 #7-10），等于提前完成 M6 集成验证的主体工作。剩余 SSE 前端流式
+为可选增强（见上节遗留）。
