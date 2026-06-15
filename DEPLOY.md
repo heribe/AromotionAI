@@ -43,20 +43,23 @@ cd aromotion
 
 ### 2. 配置环境变量
 ```bash
-cp .env.example .env
-nano .env
+cp backend/.env.example backend/.env
+nano backend/.env
 # 填入 GLM_API_KEY=（必填）
 # ZHIPUAI_BASE_URL 按你的套餐：Coding Plan 用默认值，标准套餐留空
 ```
 
+> docker compose 直接读取 `backend/.env`（见 `docker-compose.yml` 的 `env_file`），
+> 与本地开发共用同一份配置，无需在根目录另建 `.env`。
+
 ### 3. 放置抖音 Cookie
 ```bash
-mkdir -p data/backend/cookies
+mkdir -p backend/data/cookies
 # 把本地导出的 douyin.json 上传到这里
 # 方式一：scp
-#   scp douyin.json user@server:~/aromotion/data/backend/cookies/
+#   scp douyin.json user@server:~/aromotion/backend/data/cookies/
 # 方式二：nano 粘贴内容
-nano data/backend/cookies/douyin.json
+nano backend/data/cookies/douyin.json
 ```
 
 > Cookie 是 JSON 数组格式，形如 `[{"name":"...","value":"...","domain":"..."}, ...]`。
@@ -109,14 +112,14 @@ docker compose up -d --build       # 重新构建改动的镜像
 抖音 Cookie 会过期（表现为采集失败、报权限错误）。更新：
 ```bash
 # 本地重新导出 douyin.json，上传覆盖
-scp douyin.json user@server:~/aromotion/data/backend/cookies/
+scp douyin.json user@server:~/aromotion/backend/data/cookies/
 docker compose restart backend     # 重启让采集器重新读取
 ```
 
 ### 备份数据
 ```bash
-# 备份 SQLite + 媒体 + cookie（整个 data 目录）
-tar czf aromotion-backup-$(date +%Y%m%d).tar.gz data/
+# 备份 SQLite + 媒体 + cookie（backend/data 目录）
+tar czf aromotion-backup-$(date +%Y%m%d).tar.gz backend/data/
 # 下载到本地
 scp user@server:~/aromotion/aromotion-backup-*.tar.gz ./
 ```
@@ -130,15 +133,15 @@ scp user@server:~/aromotion/aromotion-backup-*.tar.gz ./
 | `backend/Dockerfile` | 后端镜像：Playwright 官方镜像 + ffmpeg + uv |
 | `frontend/Dockerfile` | 前端镜像：node 构建 → nginx 托管 |
 | `frontend/nginx.conf` | 静态托管 + SPA fallback + 反代后端（含 SSE 配置）|
-| `.env` | 环境变量（GLM_API_KEY 等，不入库）|
-| `data/backend/` | 持久化数据（db / media / cookies）|
+| `backend/.env` | 环境变量（GLM_API_KEY 等，不入库，本地开发与部署共用）|
+| `backend/data/` | 持久化数据（db / media / cookies）|
 
 ### 数据卷
-挂载到宿主机 `./data/backend/`，容器重建不丢：
+挂载到宿主机 `./backend/data/`，容器重建不丢：
 ```
-./data/backend/db/        # SQLite 数据库（aromotion.db）
-./data/backend/media/     # 下载的封面图、视频帧、头像
-./data/backend/cookies/   # 抖音 cookie（douyin.json）
+./backend/data/db/        # SQLite 数据库（aromotion.db）
+./backend/data/media/     # 下载的封面图、视频帧、头像
+./backend/data/cookies/   # 抖音 cookie（douyin.json）
 ```
 
 ### SSE 注意事项
@@ -156,7 +159,7 @@ scp user@server:~/aromotion/aromotion-backup-*.tar.gz ./
 docker compose logs backend
 ```
 常见原因：
-- `.env` 没填 `GLM_API_KEY`（必填）
+- `backend/.env` 没填 `GLM_API_KEY`（必填）
 - Playwright 在容器内权限问题（已用官方镜像规避）
 
 ### Q: 采集抖音报错 / cookie 失效？

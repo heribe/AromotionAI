@@ -190,7 +190,7 @@ AromotionAI/
 │   ├── 04-part2-frontend.md    # Part2 前端开发文档
 │   └── screenshots/            # README 截图资源
 ├── docker-compose.yml          # 单机部署编排（backend + frontend/nginx）
-├── .env.example                # 部署环境变量模板（GLM_API_KEY 等）
+├── .env.example                # 说明文件（真实配置见 backend/.env.example）
 ├── PROJECT.md                  # 架构 / 里程碑 / 接口契约
 ├── PROGRESS.md                 # 开发进度 + L1–L4 端到端验证记录
 ├── DEPLOY.md                   # 部署指南（Docker Compose）
@@ -295,17 +295,17 @@ AROMOTION_TEST_MODE=mock uv run pytest tests/e2e/
 
 ```bash
 git clone <repo> aromotion && cd aromotion
-cp .env.example .env          # 填 GLM_API_KEY
-mkdir -p data/backend/cookies # 把抖音 douyin.json 放这里
-docker compose up -d --build  # 首次构建 5-15 分钟
+cp backend/.env.example backend/.env   # 填 GLM_API_KEY
+mkdir -p backend/data/cookies          # 把抖音 douyin.json 放这里
+docker compose up -d --build           # 首次构建 5-15 分钟
 ```
 
 访问 `http://<服务器IP>` 即可。关键设计：
 
 - **Playwright 官方镜像**：自带 chromium + 系统依赖，规避浏览器自动化安装坑
 - **nginx SSE 专项配置**：`proxy_buffering off` + 600s 超时，保证任务进度实时推送
-- **数据卷**：SQLite / 媒体 / Cookie 挂载到宿主机，容器重建不丢
-- **敏感凭据**：GLM_API_KEY 走宿主机 `.env`（不入库），Cookie 手动上传到挂载卷
+- **数据卷**：SQLite / 媒体 / Cookie 挂载到宿主机 `backend/data/`，容器重建不丢
+- **统一路径**：`backend/.env` 与 `backend/data/` 本地开发与 docker 部署共用，无需为部署单独复制凭据
 
 > 完整部署步骤、运维（日志 / 重启 / 备份 / Cookie 更新）、FAQ 详见 [`DEPLOY.md`](DEPLOY.md)。
 

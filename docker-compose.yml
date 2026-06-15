@@ -1,11 +1,12 @@
 # AromotionAI 单机部署
 # 用法：
-#   1. 在本目录建 .env 填 GLM_API_KEY（见 .env.example）
-#   2. 把抖音 cookie 放到 ./data/backend/cookies/douyin.json
+#   1. 在 backend/.env 填 GLM_API_KEY（见 backend/.env.example）
+#   2. 把抖音 cookie 放到 ./backend/data/cookies/douyin.json
 #   3. docker compose up -d --build
 #   4. 访问 http://<服务器IP>
 #
-# 数据持久化：./data/backend 挂载到容器，容器重建数据不丢。
+# 统一路径：本地开发与 docker 部署共用 backend/.env 与 backend/data/，
+# 无需为部署单独复制凭据。数据持久化：backend/data 挂载到容器，容器重建不丢。
 
 services:
   # ---------- 后端 ----------
@@ -15,12 +16,11 @@ services:
       dockerfile: Dockerfile
     container_name: aromotion-backend
     restart: unless-stopped
+    # 直接读 backend/.env（与本地开发同源），不再依赖根目录 .env
+    env_file:
+      - ./backend/.env
     environment:
-      # 从宿主机 .env 读取（compose 自动注入同目录 .env）
-      GLM_API_KEY: ${GLM_API_KEY}
-      ZHIPUAI_BASE_URL: ${ZHIPUAI_BASE_URL:-https://open.bigmodel.cn/api/coding/paas/v4}
-      GLM_MODEL: ${GLM_MODEL:-glm-5.2}
-      GLM_VISION_MODEL: ${GLM_VISION_MODEL:-glm-4.6v}
+      # GLM_API_KEY / ZHIPUAI_BASE_URL 等由 env_file 注入；以下为容器内固定值或带默认值的覆盖
       APP_ENV: production
       # 生产同源（前端经 nginx 反代），CORS 实际不生效，保留以防直连后端
       CORS_ORIGINS: ${CORS_ORIGINS:-}
@@ -30,9 +30,10 @@ services:
       # Playwright 在容器内运行需要（无头模式）
       PLAYWRIGHT_BROWSERS_PATH: /ms-playwright
     volumes:
-      - ./data/backend/db:/app/data/db
-      - ./data/backend/media:/app/data/media
-      - ./data/backend/cookies:/app/data/cookies
+      # 统一挂载 backend/data，本地开发与部署共享 SQLite/media/cookie
+      - ./backend/data/db:/app/data/db
+      - ./backend/data/media:/app/data/media
+      - ./backend/data/cookies:/app/data/cookies
     # 后端不对外暴露端口，只供 frontend 容器通过内部网络访问
     expose:
       - "8000"
